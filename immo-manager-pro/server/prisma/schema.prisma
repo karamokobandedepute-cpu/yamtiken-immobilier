@@ -1,0 +1,747 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  SECRETAIRE
+  AGENT_RECOUVREMENT
+  DIRECTION
+}
+
+enum TypeBien {
+  APPARTEMENT
+  MAISON
+  VILLA
+  STUDIO
+  BUREAU
+  COMMERCE
+  ENTREPOT
+  TERRAIN
+}
+
+enum StatutBien {
+  DISPONIBLE
+  LOUE
+  VENDU
+  EN_RENOVATION
+  RESERVE
+}
+
+enum TypeContrat {
+  LOCATION
+  VENTE
+}
+
+enum StatutContrat {
+  ACTIF
+  RESILIE
+  TERMINE
+  EN_COURS
+}
+
+enum StatutPaiement {
+  PAYE
+  EN_RETARD
+  PARTIEL
+  EN_ATTENTE
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  password      String
+  nom           String
+  prenom        String
+  telephone     String?
+  role          Role      @default(SECRETAIRE)
+  actif         Boolean   @default(true)
+  dernierConnexion DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  visitesCreees     Visite[]    @relation("VisiteCreePar")
+  contratsCrees     Contrat[]   @relation("ContratCreePar")
+  paiementsCrees    Paiement[]  @relation("PaiementCreePar")
+  payments          Payment[]   // Nouveau modèle baux/paiements
+  facturesGenerees  Facture[]   // Factures générées par l'agent
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+  depenses          Depense[]   // Dépenses saisies par cet utilisateur
+
+  @@map("users")
+}
+
+enum TypeClient {
+  SOUSCRIPTEUR
+  CLIENT
+}
+
+model Client {
+  id              Int       @id @default(autoincrement())
+  type            TypeClient @default(CLIENT)
+  
+  // Identité
+  nom             String?
+  prenom          String?
+  nationalite     String?   @default("Ivoirienne")
+  dateNaissance   DateTime?
+  
+  // Contact
+  telephone       String?
+  telephone2      String?
+  email           String?
+  adresse         String?
+  profession      String?
+  
+  // Documents
+  numeroPiece     String?   @unique
+  photoUrl        String?
+  pieceUrl        String?
+  
+  // Référence (témoin/apporteur)
+  temoinId        Int?
+  temoin          Referrer? @relation(fields: [temoinId], references: [id])
+  
+  // Métadonnées
+  isDemo          Boolean   @default(false) @map("is_demo")
+  actif           Boolean   @default(true)
+  deletedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  contratsLocataire Contrat[] @relation("LocataireContrat")
+  contratsProprietaire Contrat[] @relation("ProprietaireContrat")
+  biensProprietaire Bien[] @relation("ProprietaireBiens")
+  paiements       Paiement[]
+  documents       Document[]
+  leases          Lease[]
+  commissions     Commission[]
+
+  @@index([type])
+  @@index([createdAt])
+  @@index([nom])
+  @@index([deletedAt])
+  @@index([actif])
+  @@map("clients")
+}
+
+// ============================================
+// MODULE APPORTEURS D'AFFAIRES
+// ============================================
+
+enum TypeCommission {
+  FIXE
+  POURCENTAGE
+}
+
+enum StatutCommission {
+  EN_ATTENTE
+  PAYEE
+}
+
+model Referrer {
+  id              Int           @id @default(autoincrement())
+  nom             String
+  prenom          String
+  contact         String        // Téléphone principal
+  email           String?
+  photoUrl        String?       // URL de la photo de profil
+  adresse         String?
+  
+  // Commission
+  tauxCommission  Float         @default(5.0)  // % par défaut ou montant fixe
+  typeCommission  TypeCommission @default(POURCENTAGE)
+  
+  // Statut
+  isActive        Boolean       @default(true) @map("is_active")
+  isDemo          Boolean   @default(false) @map("is_demo")
+  
+  // Dates
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relations
+  clients         Client[]
+  commissions     Commission[]
+
+  @@map("referrers")
+}
+
+model Commission {
+  id              Int               @id @default(autoincrement())
+  
+  // Relations
+  referrerId      Int
+  referrer        Referrer          @relation(fields: [referrerId], references: [id], onDelete: Cascade)
+  
+  clientId        Int
+  client          Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  // Montant et paiement
+  montant         Float
+  datePaiement    DateTime?
+  statut          StatutCommission  @default(EN_ATTENTE)
+  
+  // Description
+  description     String?
+  
+  // Métadonnées
+  isDemo          Boolean   @default(false) @map("is_demo")
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([referrerId])
+  @@index([clientId])
+  @@index([statut])
+  @@map("commissions")
+}
+
+// ============================================
+// MODULE BAUX & PAIEMENTS ÉCHELONNÉS
+// ============================================
+
+enum StatutLease {
+  ACTIF
+  TERMINE
+  RESILIE
+}
+
+enum ModePaiement {
+  ESPECES
+  VIREMENT
+  MOBILE_MONEY
+  CHEQUE
+}
+
+model Lease {
+  id              Int       @id @default(autoincrement())
+  numeroBail      String    @unique  // BAIL-2026-XXXXX
+  
+  // Relations
+  clientId        Int
+  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  uniteId         Int
+  unite           Unite     @relation(fields: [uniteId], references: [id])
+  buildingId      Int
+  building        Building  @relation(fields: [buildingId], references: [id])
+  
+  // Financier
+  montantInitial  Float     // Montant total du bail
+  caution         Float?    // Caution versée
+  droitsTerre     Float?    // Droits au sol
+  chargesAnnexes  Float?    // Charges diverses
+  
+  // Dates
+  dateSignature   DateTime  @default(now())
+  dateDebut       DateTime
+  dateEntree      DateTime? // Date réelle de remise des clés
+  dateFin         DateTime?
+  
+  // Statut
+  statut          StatutLease    @default(ACTIF)
+  
+  // Métadonnées
+  isDemo          Boolean   @default(false) @map("is_demo")
+  deletedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  payments        Payment[]
+  factures        Facture[]
+  depenses        Depense[]   // Dépenses liées à ce bail
+
+  @@index([clientId])
+  @@index([statut])
+  @@index([buildingId])
+  @@index([uniteId])
+  @@index([deletedAt])
+  @@index([createdAt])
+  @@index([dateFin])
+  @@map("leases")
+}
+
+model Payment {
+  id              Int       @id @default(autoincrement())
+  numeroFacture   String    @unique  // FAC-2026-XXXXX
+  
+  // Relations
+  leaseId         Int
+  lease           Lease     @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  
+  // Transaction
+  datePaiement    DateTime  @default(now())
+  montantVerse    Float
+  modePaiement    ModePaiement @default(ESPECES)
+  
+  // Agent qui a encaissé
+  agentId         Int
+  agent           User      @relation(fields: [agentId], references: [id])
+  
+  // Détails
+  notes           String?
+  isDemo          Boolean   @default(false) @map("is_demo")
+  deletedAt       DateTime?
+  
+  createdAt       DateTime  @default(now())
+
+  @@index([leaseId])
+  @@index([datePaiement])
+  @@index([agentId])
+  @@index([deletedAt])
+  @@map("payments")
+}
+
+// Table des factures (historique)
+model Facture {
+  id              Int       @id @default(autoincrement())
+  numeroFacture   String    @unique
+  
+  // Relations
+  leaseId         Int
+  lease           Lease     @relation(fields: [leaseId], references: [id])
+  clientId        Int
+  
+  // Contenu JSON de la facture
+  contenu         String    // JSON stringifié avec toutes les données
+  
+  // Métadonnées
+  dateGeneration  DateTime  @default(now())
+  agentId         Int
+  agent           User      @relation(fields: [agentId], references: [id])
+  
+  @@map("factures")
+}
+
+model Bien {
+  id            Int       @id @default(autoincrement())
+  reference     String    @unique
+  titre         String
+  description   String?
+  type          TypeBien
+  statut        StatutBien @default(DISPONIBLE)
+  
+  // Adresse
+  adresse       String
+  ville         String
+  quartier      String?
+  codePostal    String?
+  
+  // Caractéristiques
+  surface       Float?
+  nbPieces      Int?
+  nbChambres    Int?
+  nbSallesBain  Int?
+  etage         Int?
+  
+  // Financier
+  prixLocation  Float?
+  prixVente     Float?
+  charges       Float?
+  caution       Float?
+  
+  // Métadonnées
+  photos        String[]
+  equipements   String[]
+  
+  deletedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  proprietaireId Int?
+  proprietaire   Client?   @relation("ProprietaireBiens", fields: [proprietaireId], references: [id], onDelete: SetNull)
+  
+  visites       Visite[]
+  contrats      Contrat[]
+  documents     Document[]
+
+  @@index([statut])
+  @@index([type])
+  @@index([createdAt])
+  @@map("biens")
+}
+
+model Contrat {
+  id            Int       @id @default(autoincrement())
+  reference     String    @unique
+  type          String
+  statut        String    @default("EN_COURS")
+  
+  // Dates
+  dateDebut     DateTime      @map("date_debut")
+  dateFin       DateTime?     @map("date_fin")
+  dateSignature DateTime      @default(now()) @map("date_signature")
+  
+  // Conditions financières
+  montantLoyer  Float?        @map("montant_loyer")
+  montantVente  Float?        @map("montant_vente")
+  frequencePaiement String?   @default("MENSUEL") @map("frequence_paiement")
+  
+  // Détails
+  conditions    String?
+  indexation    Boolean       @default(false)
+  tauxIndexation Float?       @map("taux_indexation")
+  
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  bienId        Int           @map("bien_id")
+  bien          Bien          @relation(fields: [bienId], references: [id])
+  
+  locataireId   Int           @map("locataire_id")
+  locataire     Client        @relation("LocataireContrat", fields: [locataireId], references: [id])
+  
+  proprietaireId Int          @map("proprietaire_id")
+  proprietaire  Client        @relation("ProprietaireContrat", fields: [proprietaireId], references: [id])
+  
+  creeParId     Int           @map("cree_par_id")
+  creePar       User          @relation("ContratCreePar", fields: [creeParId], references: [id])
+  
+  paiements     Paiement[]
+  documents     Document[]
+
+  @@index([statut])
+  @@index([type])
+  @@index([createdAt])
+  @@map("contrats")
+}
+
+model Paiement {
+  id            Int       @id @default(autoincrement())
+  reference     String    @unique
+  montant       Float
+  datePaiement  DateTime      @default(now()) @map("date_paiement")
+  periodeDebut  DateTime?     @map("periode_debut")
+  periodeFin    DateTime?     @map("periode_fin")
+  modePaiement  String        @default("VIREMENT") @map("mode_paiement")
+  statut        String        @default("EN_ATTENTE")
+  
+  // Détails
+  referenceTransaction String? @map("reference_transaction")
+  commentaire   String?
+  
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  contratId     Int           @map("contrat_id")
+  contrat       Contrat       @relation(fields: [contratId], references: [id])
+  
+  locataireId   Int           @map("locataire_id")
+  locataire     Client        @relation(fields: [locataireId], references: [id])
+  
+  creeParId     Int           @map("cree_par_id")
+  creePar       User          @relation("PaiementCreePar", fields: [creeParId], references: [id])
+
+  @@index([statut])
+  @@index([contratId])
+  @@index([locataireId])
+  @@index([datePaiement])
+  @@map("paiements")
+}
+
+// ============================================
+// MODULE SECRÉTARIAT, VISITES & RELANCES
+// ============================================
+
+enum MotifVisite {
+  DECOUVERTE
+  NEGOCIATION
+  RECLAMATION
+  AUTRE
+}
+
+enum StatutRelance {
+  EN_ATTENTE
+  EFFECTUEE
+  ANNULEE
+}
+
+enum TypeAlerte {
+  PAIEMENT_ECHEANCE
+  BAIL_EXPIRATION
+  RELANCE_VISITE
+  GENERAL
+}
+
+model Visite {
+  id              Int           @id @default(autoincrement())
+  dateVisite      DateTime      @default(now())  // Timestamp automatique
+  
+  // Informations visiteur
+  nomVisiteur     String
+  prenomVisiteur  String
+  contact         String
+  email           String?
+  
+  // Détails visite
+  bienVisiteId    Int
+  bienVisite      Bien          @relation(fields: [bienVisiteId], references: [id])
+  motif           MotifVisite   @default(DECOUVERTE)
+  responsable     String?       // Agent en charge
+  compteRendu     String?       @db.Text
+  
+  // Gestion des relances
+  relanceSouhait  Boolean       @default(false)
+  dateRelance     DateTime?
+  statutRelance   StatutRelance @default(EN_ATTENTE)
+  
+  // Métadonnées
+  isDemo          Boolean   @default(false) @map("is_demo")
+  deletedAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  creeParId       Int?
+  creePar         User?         @relation("VisiteCreePar", fields: [creeParId], references: [id])
+
+  @@index([bienVisiteId])
+  @@index([statutRelance])
+  @@index([dateRelance])
+  @@map("visites")
+}
+
+// Table des alertes automatiques
+model Alerte {
+  id              Int           @id @default(autoincrement())
+  type            TypeAlerte
+  titre           String
+  description     String
+  
+  // Référence (optionnel selon le type)
+  referenceId     Int?          // ID du bail, paiement, etc.
+  referenceType   String?       // 'lease', 'payment', 'visite'
+  
+  // Date butoir
+  dateEcheance    DateTime
+  
+  // Statut
+  estLue          Boolean       @default(false)
+  estTraitee      Boolean       @default(false)
+  dateTraitement  DateTime?
+  
+  // Notification envoyée
+  emailEnvoye     Boolean       @default(false)
+  dateEnvoiEmail  DateTime?
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([type])
+  @@index([estTraitee])
+  @@index([dateEcheance])
+  @@map("alertes")
+}
+
+// Table des notifications utilisateur
+model Notification {
+  id              Int           @id @default(autoincrement())
+  userId          Int
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  titre           String
+  message         String
+  type            String        @default("INFO") // INFO, WARNING, DANGER, SUCCESS
+  
+  estLue          Boolean       @default(false)
+  
+  // Lien optionnel vers une ressource
+  lien            String?
+  
+  createdAt       DateTime      @default(now())
+
+  @@index([userId])
+  @@index([estLue])
+  @@map("notifications")
+}
+
+model Document {
+  id            Int       @id @default(autoincrement())
+  nom           String
+  type          String    @default("PDF")
+  chemin        String
+  taille        Int?
+  description   String?
+  categorie     String?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations (polymorphique via catégorie)
+  clientId      Int?
+  client        Client?   @relation(fields: [clientId], references: [id])
+  
+  bienId        Int?
+  bien          Bien?     @relation(fields: [bienId], references: [id])
+  
+  contratId     Int?
+  contrat       Contrat?  @relation(fields: [contratId], references: [id])
+
+  @@map("documents")
+}
+
+model Relance {
+  id            Int       @id @default(autoincrement())
+  type          String    // PAIEMENT, CONTRAT, VISITE
+  destinataire  String
+  message       String
+  dateEnvoi     DateTime  @default(now()) @map("date_envoi")
+  statut        String    @default("ENVOYE")
+  
+  // Référence
+  referenceId   Int?      @map("reference_id")
+  referenceType String?   @map("reference_type")
+  
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@map("relances")
+}
+
+// ============================================
+// MODULE GESTION DU PATRIMOINE IMMOBILIER
+// ============================================
+
+enum TypeBuilding {
+  R2
+  R3
+  R4
+  VILLA
+  COUR_COMMUNE
+}
+
+enum TypeUnite {
+  STUDIO
+  CHAMBRE
+  CHAMBRE_SALON
+  MAGASIN
+}
+
+enum StatutUnite {
+  VACANT
+  OCCUPE
+  RESERVE
+}
+
+model Building {
+  id              Int       @id @default(autoincrement())
+  nom             String
+  type            TypeBuilding
+  adresse         String
+  commune         String
+  ville           String    @default("Abidjan")
+  nombreEtages    Int       @default(1)
+  
+  // Financier
+  valeurEstimee   Float?
+  droitsTerre     String?
+  chargesAnnexes  Float?
+  
+  // Métadonnées
+  dateAcquisition DateTime?
+  notes           String?
+  isDemo          Boolean   @default(false) @map("is_demo")
+  deletedAt       DateTime?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  unites          Unite[]
+  leases          Lease[]
+
+  @@index([deletedAt])
+  @@map("buildings")
+}
+
+model Unite {
+  id              Int       @id @default(autoincrement())
+  numeroPorte     String
+  typeUnite       TypeUnite
+  etage           Int       @default(0)
+  loyerBase       Float
+  statut          StatutUnite @default(VACANT)
+  isDemo          Boolean   @default(false) @map("is_demo")
+  deletedAt       DateTime?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  buildingId      Int
+  building        Building  @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  leases          Lease[]
+
+  @@index([buildingId])
+  @@index([statut])
+  @@map("unites")
+}
+
+// ============================================
+// AUDIT LOG - Traçabilité complète
+// ============================================
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  action      String   // CREATE, UPDATE, DELETE
+  tableName   String   // 'lease', 'payment', 'client', etc.
+  recordId    Int
+  oldData     Json?    // Snapshot avant modification
+  newData     Json?    // Snapshot après modification
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([tableName, recordId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ============================================
+// CAISSE — DÉPENSES & AUDIT FINANCIER
+// ============================================
+
+model Depense {
+  id            Int       @id @default(autoincrement())
+
+  // Informations de la dépense
+  motif         String                    // Raison courte (ex: "Achat fournitures bureau")
+  categorie     String                    // SALAIRE, FOURNITURE_BUREAU, REPARATION, etc.
+  montant       Float                     // Montant en FCFA
+  date          DateTime  @default(now()) // Date et heure exactes de la dépense
+  description   String?                  // Détails supplémentaires (optionnel)
+  reference     String?                  // Numéro de référence / bon de caisse
+
+  // Traçabilité — QUI a saisi la dépense
+  createdById   Int       @map("created_by_id")
+  createdBy     User      @relation(fields: [createdById], references: [id])
+
+  // Lien optionnel avec un bail (si dépense liée à un immeuble/contrat)
+  leaseId       Int?      @map("lease_id")
+  lease         Lease?    @relation(fields: [leaseId], references: [id])
+
+  // Métadonnées
+  deletedAt     DateTime? @map("deleted_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([categorie])
+  @@index([date])
+  @@index([createdById])
+  @@index([deletedAt])
+  @@map("depenses")
+}

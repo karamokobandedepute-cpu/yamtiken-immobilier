@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YAMTIKEN</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(145deg, #0D3B1F 0%, #1A6B35 55%, #0D3B1F 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      user-select: none;
+      overflow: hidden;
+    }
+
+    /* Cercles décoratifs flottants */
+    .bg-circle {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.06;
+      background: #C8960C;
+    }
+    .bg-circle.c1 { width: 300px; height: 300px; top: -80px; right: -60px; }
+    .bg-circle.c2 { width: 200px; height: 200px; bottom: -50px; left: -40px; }
+    .bg-circle.c3 { width: 120px; height: 120px; top: 40%; left: 10%; }
+
+    .content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .logo-badge {
+      width: 72px;
+      height: 72px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #C8960C, #E6B020);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 18px;
+      box-shadow: 0 8px 32px rgba(200, 150, 12, 0.4);
+      animation: pulse-badge 2s ease-in-out infinite;
+    }
+    .logo-badge svg { width: 40px; height: 40px; fill: white; }
+
+    @keyframes pulse-badge {
+      0%, 100% { box-shadow: 0 8px 32px rgba(200, 150, 12, 0.4); }
+      50% { box-shadow: 0 8px 48px rgba(200, 150, 12, 0.7); }
+    }
+
+    .brand-name {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    }
+
+    .brand-sub {
+      font-size: 0.72rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #C8960C;
+      font-weight: 600;
+      margin-bottom: 36px;
+    }
+
+    /* Barre de progression animée */
+    .progress-track {
+      width: 260px;
+      height: 3px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #C8960C, #E6B020, #C8960C);
+      background-size: 200% 100%;
+      border-radius: 3px;
+      animation: shimmer 1.6s linear infinite, grow 3s ease-out forwards;
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% center; }
+      100% { background-position: -200% center; }
+    }
+    @keyframes grow {
+      0% { width: 0%; }
+      30% { width: 40%; }
+      60% { width: 70%; }
+      85% { width: 88%; }
+      100% { width: 98%; }
+    }
+
+    .status {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 0.5px;
+      height: 16px;
+    }
+    .dot {
+      display: inline-block;
+      animation: blink 1.2s step-start infinite;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+    .footer {
+      position: absolute;
+      bottom: 16px;
+      font-size: 0.62rem;
+      color: rgba(255,255,255,0.25);
+      letter-spacing: 1px;
+    }
+
+    .version {
+      position: absolute;
+      top: 16px;
+      right: 18px;
+      font-size: 0.6rem;
+      color: rgba(255,255,255,0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-circle c1"></div>
+  <div class="bg-circle c2"></div>
+  <div class="bg-circle c3"></div>
+
+  <span class="version">v1.0.0</span>
+
+  <div class="content">
+    <div class="logo-badge">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 12L12 3L21 12V21H15V15H9V21H3V12Z"/>
+      </svg>
+    </div>
+    <div class="brand-name">YAMTIKEN</div>
+    <div class="brand-sub">Immobilier &bull; Behemoth</div>
+
+    <div class="progress-track">
+      <div class="progress-bar"></div>
+    </div>
+
+    <div class="status">
+      Démarrage du serveur<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span>
+    </div>
+  </div>
+
+  <div class="footer">© 2026 YAMTIKEN — Tous droits réservés</div>
+
+  <script>
+    // Cycle des messages de statut
+    const messages = [
+      'Démarrage du serveur',
+      'Connexion à la base de données',
+      'Chargement des modules',
+      'Initialisation de l\'interface',
+      'Presque prêt'
+    ]
+    let i = 0
+    const statusEl = document.querySelector('.status')
+    setInterval(() => {
+      i = (i + 1) % messages.length
+      statusEl.innerHTML = messages[i] +
+        '<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span>'
+    }, 2200)
+  </script>
+</body>
+</html>

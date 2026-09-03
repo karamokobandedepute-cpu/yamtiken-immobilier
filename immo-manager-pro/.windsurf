@@ -1,0 +1,28 @@
+# Instructions Windsurf - Projet IMMO MANAGER PRO
+# Ces règles s'appliquent à toutes les sessions
+
+## Mode de travail : FLOW
+- Toujours vérifier le rendu visuel après chaque modification
+- Utiliser le Browser Preview intégré (Ctrl+Shift+P → "Preview")
+- Corriger immédiatement si le visuel n'est pas moderne et épuré
+- Privilégier les itérations rapides avec feedback visuel
+
+## Commandes rapides
+/terminal - Ouvrir/exécuter une commande
+/edit - Modifier un fichier directement
+/preview - Lancer le Browser Preview
+
+## Standards visuels
+- Interface moderne et épurée
+- Couleurs YAMTIKEN : #0D3B1F (vert foncé), #1A6B35 (vert), #C8960C (or)
+- Responsive et fluide
+- Pas de doublons de fonctionnalités
+- Code léger et performant
+
+## Workflow
+1. Analyser la demande
+2. Modifier le code
+3. Lancer/rafraîchir le Preview
+4. Vérifier le rendu visuel
+5. Corriger si nécessaire
+6. Valider avec l'utilisateur

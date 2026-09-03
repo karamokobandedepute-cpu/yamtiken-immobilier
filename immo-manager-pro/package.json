@@ -1,0 +1,27 @@
+{
+  "name": "immo-manager-pro",
+  "version": "2.0.0",
+  "description": "YAMTIKEN BEHEMOTH - Gestion Immobilière",
+  "main": "ecosystem.config.js",
+  "scripts": {
+    "start": "cd server && node server.js",
+    "dev": "cd client && npm run dev",
+    "backend": "cd server && node server.js",
+    "frontend": "cd client && npm run dev",
+    "build": "cd client && npm run build",
+    "seed": "cd server && node prisma/seed.js",
+    "test": "node pw-dashboard.mjs"
+  },
+  "keywords": [
+    "immobilier",
+    "gestion",
+    "yamtiken"
+  ],
+  "author": "Christian Anisonok",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "electron-serve": "^3.0.1",
+    "playwright": "^1.59.1"
+  }
+}

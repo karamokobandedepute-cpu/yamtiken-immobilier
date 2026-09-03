@@ -1,0 +1,45 @@
+/* ClientsPage.module.css */
+
+/* Row hover effect */
+.rowHover {
+  transition: background-color 0.2s, transform 0.2s;
+}
+.rowHover:hover {
+  background: #E8F5EC; /* light green */
+  transform: scale(1.015);
+}
+
+/* Button hover (green, gold, etc.) */
+.btnHover {
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+.btnHover:hover {
+  background: #C8960C; /* gold */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+/* Icon hover */
+.iconHover {
+  transition: color 0.2s;
+}
+.iconHover:hover {
+  color: #1A6B35; /* darker green */
+}
+
+/* Modal entrance animation */
+.modalEnter {
+  animation: fadeScale 0.3s ease-out forwards;
+}
+@keyframes fadeScale {
+  from { opacity:0; transform:scale(0.95); }
+  to   { opacity:1; transform:scale(1); }
+}
+
+/* Toast fade */
+.toast {
+  animation: fadeIn 0.3s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity:0; }
+  to   { opacity:1; }
+}

@@ -1,0 +1,426 @@
+/* ============================================
+   🎨 ANIMATIONS GLOBALES - IMMO MANAGER PRO
+   ============================================ */
+
+/* Variables CSS pour les animations */
+:root {
+  /* Durées */
+  --animation-duration-fast: 0.2s;
+  --animation-duration-normal: 0.3s;
+  --animation-duration-slow: 0.5s;
+  --animation-duration-very-slow: 1s;
+  
+  /* Easing functions */
+  --animation-easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --animation-easing-in: cubic-bezier(0.4, 0, 1, 1);
+  --animation-easing-out: cubic-bezier(0, 0, 0.2, 1);
+  --animation-easing-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
+  /* Délais */
+  --animation-delay-short: 50ms;
+  --animation-delay-medium: 100ms;
+  --animation-delay-long: 200ms;
+}
+
+/* ============================================
+   ANIMATIONS KEYFRAMES
+   ============================================ */
+
+/* Fade In - Apparition en fondu */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Fade Out - Disparition en fondu */
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Slide Up - Glissement vers le haut */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Slide Down - Glissement vers le bas */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Slide In - Glissement latéral */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Slide In Left - Glissement depuis la gauche */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Slide In Right - Glissement depuis la droite */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Scale In - Zoom avant */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Scale Out - Zoom arrière */
+@keyframes scaleOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+/* Bounce - Rebond */
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Pulse - Pulsation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Shimmer - Effet brillant */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* Spin - Rotation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Shake - Secousse */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-5px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(5px);
+  }
+}
+
+/* Progress Bar - Barre de progression */
+@keyframes progressBar {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+/* Glow - Lueur */
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(16, 185, 129, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.8);
+  }
+}
+
+/* ============================================
+   CLASSES UTILITAIRES
+   ============================================ */
+
+/* Fade animations */
+.animate-fade-in {
+  animation: fadeIn var(--animation-duration-normal) var(--animation-easing-default);
+}
+
+.animate-fade-out {
+  animation: fadeOut var(--animation-duration-normal) var(--animation-easing-default);
+}
+
+/* Slide animations */
+.animate-slide-up {
+  animation: slideUp var(--animation-duration-normal) var(--animation-easing-out);
+}
+
+.animate-slide-down {
+  animation: slideDown var(--animation-duration-normal) var(--animation-easing-out);
+}
+
+.animate-slide-in {
+  animation: slideIn var(--animation-duration-normal) var(--animation-easing-out) forwards;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft var(--animation-duration-normal) var(--animation-easing-out);
+}
+
+.animate-slide-in-right {
+  animation: slideInRight var(--animation-duration-normal) var(--animation-easing-out);
+}
+
+/* Scale animations */
+.animate-scale-in {
+  animation: scaleIn var(--animation-duration-normal) var(--animation-easing-bounce);
+}
+
+.animate-scale-out {
+  animation: scaleOut var(--animation-duration-normal) var(--animation-easing-default);
+}
+
+/* Motion animations */
+.animate-bounce {
+  animation: bounce var(--animation-duration-slow) ease-in-out infinite;
+}
+
+.animate-pulse {
+  animation: pulse var(--animation-duration-very-slow) ease-in-out infinite;
+}
+
+.animate-spin {
+  animation: spin var(--animation-duration-very-slow) linear infinite;
+}
+
+.animate-shake {
+  animation: shake var(--animation-duration-normal) var(--animation-easing-default);
+}
+
+/* Shimmer effect */
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Glow effect */
+.animate-glow {
+  animation: glow var(--animation-duration-very-slow) ease-in-out infinite;
+}
+
+/* ============================================
+   TRANSITIONS HOVER
+   ============================================ */
+
+.hover-scale {
+  transition: transform var(--animation-duration-fast) var(--animation-easing-default);
+}
+
+.hover-scale:hover {
+  transform: scale(1.05);
+}
+
+.hover-scale-lg {
+  transition: transform var(--animation-duration-fast) var(--animation-easing-default);
+}
+
+.hover-scale-lg:hover {
+  transform: scale(1.1);
+}
+
+.hover-lift {
+  transition: all var(--animation-duration-fast) var(--animation-easing-default);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.hover-glow {
+  transition: box-shadow var(--animation-duration-fast) var(--animation-easing-default);
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+}
+
+/* ============================================
+   ANIMATIONS AVEC DÉLAI
+   ============================================ */
+
+.animate-delay-1 {
+  animation-delay: calc(var(--animation-delay-short) * 1);
+}
+
+.animate-delay-2 {
+  animation-delay: calc(var(--animation-delay-short) * 2);
+}
+
+.animate-delay-3 {
+  animation-delay: calc(var(--animation-delay-short) * 3);
+}
+
+.animate-delay-4 {
+  animation-delay: calc(var(--animation-delay-short) * 4);
+}
+
+.animate-delay-5 {
+  animation-delay: calc(var(--animation-delay-short) * 5);
+}
+
+/* ============================================
+   ANIMATIONS SPÉCIFIQUES MÉTIER
+   ============================================ */
+
+/* Card Entry - Entrée de carte */
+.card-entry {
+  animation: slideUp var(--animation-duration-normal) var(--animation-easing-out);
+}
+
+/* Modal Entry - Entrée de modal */
+.modal-entry {
+  animation: scaleIn var(--animation-duration-normal) var(--animation-easing-bounce);
+}
+
+/* Toast Entry - Entrée de notification */
+.toast-entry {
+  animation: slideInRight var(--animation-duration-fast) var(--animation-easing-out);
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  animation: spin var(--animation-duration-very-slow) linear infinite;
+}
+
+/* Success Checkmark */
+.success-checkmark {
+  animation: scaleIn var(--animation-duration-normal) var(--animation-easing-bounce);
+}
+
+/* Error Shake */
+.error-shake {
+  animation: shake var(--animation-duration-normal) var(--animation-easing-default);
+}
+
+/* ============================================
+   RESPONSIVE ANIMATIONS
+   ============================================ */
+
+/* Désactiver les animations sur mobile si préférence utilisateur */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Animations plus rapides sur mobile */
+@media (max-width: 768px) {
+  :root {
+    --animation-duration-fast: 0.15s;
+    --animation-duration-normal: 0.2s;
+    --animation-duration-slow: 0.3s;
+  }
+}
+
+/* ============================================
+   PERFORMANCES
+   ============================================ */
+
+/* Optimisation GPU pour les animations */
+.gpu-accelerated {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Désactiver will-change après animation */
+.animate-fade-in,
+.animate-slide-up,
+.animate-slide-in,
+.animate-scale-in {
+  will-change: transform, opacity;
+}
+
+.animate-fade-in.animation-complete,
+.animate-slide-up.animation-complete,
+.animate-slide-in.animation-complete,
+.animate-scale-in.animation-complete {
+  will-change: auto;
+}

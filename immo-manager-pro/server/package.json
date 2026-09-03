@@ -1,0 +1,56 @@
+{
+  "name": "immo-manager-pro-server",
+  "version": "1.0.0",
+  "description": "Backend API pour IMMO MANAGER PRO - YAMTIKEN BEHEMOTH",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "predev": "node -e \"const {execSync}=require('child_process');try{execSync('netstat -ano | findstr :5000',{stdio:'pipe'}).toString().split('\\n').filter(l=>l.includes('LISTENING')).forEach(l=>{const pid=l.trim().split(/\\s+/).pop();if(pid&&pid!=='0'){try{execSync('taskkill /F /PID '+pid,{stdio:'pipe'});}catch(e){}}});}catch(e){}console.log('[PRESTART] Port 5000 libéré')\"",
+    "dev": "node server.js",
+    "start": "node server.js",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:seed": "node prisma/seed.js",
+    "db:studio": "prisma studio",
+    "db:generate": "prisma generate",
+    "demo:seed": "node scripts/seed-demo-data.js",
+    "demo:clear": "node scripts/clear-demo-data.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.10.0",
+    "bcrypt": "^5.1.1",
+    "bcryptjs": "^3.0.3",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
+    "express": "^4.18.3",
+    "express-rate-limit": "^8.4.1",
+    "express-validator": "^7.0.1",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "node-cache": "^5.1.2",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.11",
+    "pdfkit": "^0.18.0",
+    "socket.io": "^4.8.3",
+    "winston": "^3.19.0",
+    "xss-clean": "^0.1.4",
+    "zod": "^4.4.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0",
+    "prisma": "^5.10.0"
+  },
+  "keywords": [
+    "immobilier",
+    "gestion",
+    "api",
+    "nodejs",
+    "express",
+    "prisma"
+  ],
+  "author": "YAMTIKEN BEHEMOTH",
+  "license": "PRIVATE"
+}
