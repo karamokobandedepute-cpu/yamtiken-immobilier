@@ -10,7 +10,7 @@ services:
   # ============================================================
   backend:
     build:
-      context: ./server
+      context: ./immo-manager-pro/server
       dockerfile: Dockerfile
     container_name: immo-backend
     
@@ -23,9 +23,9 @@ services:
     
     # 📁 VOLUMES - Code monté en temps réel (pas besoin de rebuild)
     volumes:
-      - ./server:/app
+      - ./immo-manager-pro/server:/app
       - /app/node_modules
-      - ./logs:/app/logs
+      - ./immo-manager-pro/logs:/app/logs
     
     # 🌍 ENVIRONNEMENT
     environment:
@@ -69,7 +69,7 @@ services:
   # ============================================================
   frontend:
     build:
-      context: ./client
+      context: ./immo-manager-pro/client
       dockerfile: Dockerfile
     container_name: immo-frontend
     
@@ -82,9 +82,9 @@ services:
     
     # 📁 VOLUMES - Hot reload du code
     volumes:
-      - ./client:/app
+      - ./immo-manager-pro/client:/app
       - /app/node_modules
-      - ./logs:/app/logs
+      - ./immo-manager-pro/logs:/app/logs
     
     # 🌍 ENVIRONNEMENT
     environment:
