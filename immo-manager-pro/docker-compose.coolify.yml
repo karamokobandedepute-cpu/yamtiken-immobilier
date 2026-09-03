@@ -1,0 +1,162 @@
+# ============================================================
+# DOCKER COMPOSE - INFRASTRUCTURE INCREVABLE
+# Backend + Frontend avec restart always et health checks
+# ============================================================
+version: '3.8'
+
+services:
+  # ============================================================
+  # BACKEND NODE.JS - L'API
+  # ============================================================
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: immo-backend
+    
+    # 🔄 INCASSABLE - Toujours redémarrer
+    restart: always
+    
+    # 🌐 PORTS
+    ports:
+      - "5002:5002"
+    
+    # 📁 VOLUMES - Code monté en temps réel (pas besoin de rebuild)
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+      - ./logs:/app/logs
+    
+    # 🌍 ENVIRONNEMENT
+    environment:
+      - NODE_ENV=development
+      - PORT=5002
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+    
+    # 💾 LIMITES MÉMOIRE
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+    
+    # 🏥 HEALTH CHECK - Vérifie si le service répond
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5002/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # 🌐 RÉSEAU
+    networks:
+      - immo-network
+    
+    # 📝 LOGS
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================================
+  # FRONTEND VITE - L'INTERFACE
+  # ============================================================
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: immo-frontend
+    
+    # 🔄 INCASSABLE
+    restart: always
+    
+    # 🌐 PORTS
+    ports:
+      - "5177:5177"
+    
+    # 📁 VOLUMES - Hot reload du code
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+      - ./logs:/app/logs
+    
+    # 🌍 ENVIRONNEMENT
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:5002/api
+      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+      - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+    
+    # 💾 LIMITES MÉMOIRE
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+    
+    # 🏥 HEALTH CHECK
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5177"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # ⏳ DÉPENDANCES
+    depends_on:
+      backend:
+        condition: service_healthy
+    
+    # 🌐 RÉSEAU
+    networks:
+      - immo-network
+    
+    # 📝 LOGS
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================================
+  # WATCHTOWER - Auto-update des containers (optionnel)
+  # ============================================================
+  watchtower:
+    image: containrrr/watchtower
+    container_name: immo-watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_POLL_INTERVAL=3600  # Check toutes les heures
+      - WATCHTOWER_CLEANUP=true
+    command: --interval 3600 backend frontend
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+# ============================================================
+# RÉSEAU INTERNE
+# ============================================================
+networks:
+  immo-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# ============================================================
+# VOLUMES PERSISTANTS
+# ============================================================
+volumes:
+  backend_logs:
+  frontend_logs:
