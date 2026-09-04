@@ -17,9 +17,7 @@ services:
     # 🔄 INCASSABLE - Toujours redémarrer
     restart: always
     
-    # 🌐 PORTS & LABELS TRAEFIK
-    ports:
-      - "5002:5002"
+    # 🌐 LABELS TRAEFIK
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.backend.loadbalancer.server.port=5002"
@@ -80,9 +78,7 @@ services:
     # 🔄 INCASSABLE
     restart: always
     
-    # 🌐 PORTS & LABELS TRAEFIK
-    ports:
-      - "80:80"
+    # 🌐 LABELS TRAEFIK
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
