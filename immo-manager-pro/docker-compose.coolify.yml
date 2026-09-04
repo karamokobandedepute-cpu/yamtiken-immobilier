@@ -17,9 +17,12 @@ services:
     # 🔄 INCASSABLE - Toujours redémarrer
     restart: always
     
-    # 🌐 PORTS
+    # 🌐 PORTS & LABELS TRAEFIK
     ports:
       - "5002:5002"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.backend.loadbalancer.server.port=5002"
     
     # 📁 VOLUMES - Logs uniquement en production
     volumes:
@@ -47,7 +50,7 @@ services:
     
     # 🏥 HEALTH CHECK - Vérifie si le service répond
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5002/api/health"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:5002/api/health || exit 1"]
       interval: 20s
       timeout: 5s
       retries: 5
@@ -76,9 +79,12 @@ services:
     # 🔄 INCASSABLE
     restart: always
     
-    # 🌐 PORTS
+    # 🌐 PORTS & LABELS TRAEFIK
     ports:
       - "5177:80"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
     
     # 📁 VOLUMES - Logs uniquement
     volumes:
