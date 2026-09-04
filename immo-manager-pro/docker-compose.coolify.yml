@@ -78,6 +78,11 @@ services:
     ports:
       - "80"
       
+    # 🏷️ LABELS TRAEFIK
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+      
     # 🔄 INCASSABLE
     restart: always
     
@@ -131,6 +136,7 @@ services:
 # ============================================================
 networks:
   coolify:
+    name: coolify
     external: true
 
 # ============================================================
