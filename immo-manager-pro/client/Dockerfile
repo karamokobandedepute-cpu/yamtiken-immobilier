@@ -31,11 +31,11 @@ COPY --from=build /app/dist /usr/share/nginx/html
 RUN mkdir -p /app/logs
 
 # Port exposé (le port doit correspondre à nginx.conf et docker-compose)
-EXPOSE 5177
+EXPOSE 80
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost:5177 || exit 1
+  CMD wget --quiet --tries=1 --spider http://localhost:80 || exit 1
 
 # Lancement de Nginx
 CMD ["nginx", "-g", "daemon off;"]

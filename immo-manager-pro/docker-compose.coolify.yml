@@ -78,7 +78,7 @@ services:
     
     # 🌐 PORTS
     ports:
-      - "5177:5177"
+      - "5177:80"
     
     # 📁 VOLUMES - Logs uniquement
     volumes:
