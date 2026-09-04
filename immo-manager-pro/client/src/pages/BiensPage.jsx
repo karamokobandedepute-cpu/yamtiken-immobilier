@@ -71,7 +71,9 @@ const BiensPage = () => {
       const response = await fetchBuildings(Object.keys(params).length > 0 ? params : undefined)
       setBuildings(response?.data?.data || [])
     } catch (error) {
-      toast.error('Erreur lors du chargement des immeubles')
+      if (error?.response?.status !== 401 && error?.response?.status !== 403) {
+        toast.error('Erreur lors du chargement des immeubles')
+      }
       console.error('[loadBuildings]', error)
     } finally {
       setLoading(false)

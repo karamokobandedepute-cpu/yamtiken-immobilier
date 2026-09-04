@@ -1,10 +1,7 @@
-import pkg from '@prisma/client';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-
-const { PrismaClient } = pkg;
-const prisma = new PrismaClient();
+import prisma from '../lib/prisma.js';
 
 // Dossier uploads
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

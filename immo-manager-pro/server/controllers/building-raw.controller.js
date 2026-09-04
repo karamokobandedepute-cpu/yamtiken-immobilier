@@ -1,7 +1,4 @@
-import pkg from '@prisma/client';
-const { PrismaClient } = pkg;
-
-const prisma = new PrismaClient();
+import prisma from '../lib/prisma.js';
 
 // GET /api/buildings - Version SQL raw pour contourner les problèmes de synchronisation Prisma
 export const getAllBuildings = async (req, res) => {
