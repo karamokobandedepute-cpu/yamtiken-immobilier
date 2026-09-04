@@ -5,9 +5,11 @@ export default defineConfig({
   plugins: [react()],
   base: './', // Chemins relatifs — requis pour electron-serve (app:// protocol)
   server: {
+    host: '0.0.0.0',
+    allowedHosts: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: process.env.VITE_BACKEND_INTERNAL_URL || 'http://backend:5002',
         changeOrigin: true
       }
     }
