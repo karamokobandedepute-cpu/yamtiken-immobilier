@@ -81,6 +81,8 @@ services:
     # 🏷️ LABELS TRAEFIK
     labels:
       - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`yamtiken2026.online`)"
+      - "traefik.http.routers.frontend.entrypoints=web,websecure"
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
       
     # 🔄 INCASSABLE
