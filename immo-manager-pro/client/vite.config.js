@@ -8,6 +8,9 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     allowedHosts: true,
+    headers: {
+      'Cache-Control': 'no-store'
+    },
     proxy: {
       '/api': {
         target: process.env.VITE_BACKEND_INTERNAL_URL || 'http://backend:5002',

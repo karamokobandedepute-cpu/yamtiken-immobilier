@@ -7,6 +7,9 @@
     <meta name="theme-color" content="#1A6B35" />
     <meta name="description" content="Gestion Immobilière Professionnelle" />
     <link rel="manifest" href="/manifest.json" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>IMMO MANAGER PRO - YAMTIKEN BEHEMOTH</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +21,9 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js');
+          navigator.serviceWorker.register('/sw.js').then((reg) => {
+            reg.update();
+          });
         });
       }
     </script>
