@@ -18,6 +18,18 @@ services:
     expose:
       - "5002"
       
+    # 🏷️ LABELS TRAEFIK
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=coolify"
+      - "traefik.http.routers.backend-http.entrypoints=http"
+      - "traefik.http.routers.backend-http.rule=Host(`yamtiken2026.online`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend-https.entrypoints=https"
+      - "traefik.http.routers.backend-https.rule=Host(`yamtiken2026.online`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend-https.tls=true"
+      - "traefik.http.routers.backend-https.tls.certresolver=letsencrypt"
+      - "traefik.http.services.backend.loadbalancer.server.port=5002"
+      
     # 🔄 INCASSABLE - Toujours redémarrer
     restart: always
     
