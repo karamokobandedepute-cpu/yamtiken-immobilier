@@ -29,10 +29,12 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=5002
-      - DATABASE_URL=${DATABASE_URL}
-      - JWT_SECRET=${JWT_SECRET}
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres.ualdtjicekzyoobagfmf:77916407@@Mu@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=15&pool_timeout=30&sslmode=require&connect_timeout=30}
+      - DIRECT_URL=${DIRECT_URL:-postgresql://postgres:77916407@@Mu@db.ualdtjicekzyoobagfmf.supabase.co:5432/postgres?sslmode=require}
+      - JWT_SECRET=${JWT_SECRET:-yamtiken_behemoth_jwt_2026_secure_random_key_987654321abcdef}
+      - SUPABASE_URL=${SUPABASE_URL:-https://ualdtjicekzyoobagfmf.supabase.co}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVhbGR0amljZWt6eW9vYmFnZm1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0OTU0NjAsImV4cCI6MjA5MzA3MTQ2MH0.db36vGw76szLp_wL8vUBn0-gVnJLV0k9zFnDKTj_DQc}
+      - CLIENT_URL=${CLIENT_URL:-http://localhost:5177}
     
     # 💾 LIMITES MÉMOIRE
     deploy:
@@ -85,9 +87,9 @@ services:
     # 🌍 ENVIRONNEMENT
     environment:
       - NODE_ENV=production
-      - VITE_API_URL=http://localhost:5002/api
-      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
-      - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:5002/api}
+      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL:-https://ualdtjicekzyoobagfmf.supabase.co}
+      - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVhbGR0amljZWt6eW9vYmFnZm1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0OTU0NjAsImV4cCI6MjA5MzA3MTQ2MH0.db36vGw76szLp_wL8vUBn0-gVnJLV0k9zFnDKTj_DQc}
     
     # 💾 LIMITES MÉMOIRE
     deploy:
