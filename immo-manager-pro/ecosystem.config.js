@@ -30,7 +30,7 @@ module.exports = {
   deploy: {
     production: {
       user: 'root',
-      host: ['54.36.209.70'],
+      host: [process.env.DEPLOY_HOST || 'localhost'],
       ref: 'origin/main',
       repo: 'TON_REPO_GIT',
       path: '/var/www/immo-manager',

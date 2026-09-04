@@ -44,7 +44,11 @@ dotenv.config();
 
 // Vérification des variables critiques au démarrage
 if (!process.env.JWT_SECRET) {
-  console.warn('⚠️ AVERTISSEMENT: JWT_SECRET manquant dans l\'environnement — utilisation d\'une clé par défaut temporaire.');
+  if (process.env.NODE_ENV === 'production') {
+    console.error('❌ ERREUR CRITIQUE: JWT_SECRET manquant en production. Arrêt du serveur.');
+    process.exit(1);
+  }
+  console.warn('⚠️ AVERTISSEMENT: JWT_SECRET manquant dans l\'environnement — utilisation d\'une clé par défaut temporaire pour le développement.');
   process.env.JWT_SECRET = 'yamtiken_jwt_secret_coolify_2026_default_key_change_me';
 }
 
@@ -54,8 +58,8 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const VPS_FRONTEND_ORIGIN = 'http://54.36.209.70:4000'
-const VPS_API_ORIGIN = 'http://54.36.209.70:5000'
+const VPS_FRONTEND_ORIGIN = process.env.VPS_FRONTEND_ORIGIN || 'http://localhost:4000'
+const VPS_API_ORIGIN = process.env.VPS_API_ORIGIN || 'http://localhost:5000'
 
 // Middlewares de sécurité
 const isDev = process.env.NODE_ENV !== 'production'

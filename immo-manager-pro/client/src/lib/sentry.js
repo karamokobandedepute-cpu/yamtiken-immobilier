@@ -36,7 +36,7 @@ export const initSentry = () => {
     // 📊 Performance Monitoring
     integrations: [
       Sentry.browserTracingIntegration({
-        tracePropagationTargets: ['localhost', '54.36.209.70', /^https:\/\/yourserver\.io\/api/],
+        tracePropagationTargets: ['localhost', /^https:\/\/yourserver\.io\/api/],
       }),
       // Replay des sessions (optionnel, plan payant)
       // new Sentry.Replay({

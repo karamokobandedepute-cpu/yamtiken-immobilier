@@ -40,3 +40,8 @@ server/uploads/
 # Cache
 .cache/
 .parcel-cache/
+
+dist-electron/
+dist/
+logs/
+

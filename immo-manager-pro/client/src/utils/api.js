@@ -39,7 +39,7 @@ const isProduction = import.meta.env.PROD || import.meta.env.NODE_ENV === 'produ
 
 // URL de base API — dev : proxy Vite /api ; prod : VITE_API_URL ou VPS fixe
 const API_URL = import.meta.env.PROD
-  ? (import.meta.env.VITE_API_URL || 'http://54.36.209.70:5000/api')
+  ? (import.meta.env.VITE_API_URL || 'http://localhost:5000/api')
   : '/api'
 
 if (!isProduction) console.debug(`[API] Base URL: ${API_URL}`)

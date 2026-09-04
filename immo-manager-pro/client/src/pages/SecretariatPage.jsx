@@ -1865,9 +1865,29 @@ const AlertesTab = ({ alertesStats, loading, onRefresh, onMarquerToutesLues }) =
         </div>
         <div className="flex items-center gap-2">
           {alertesStats.totalNonLues > 0 && (
-            <span className="animate-pulse px-3 py-1 rounded-full text-xs font-medium bg-red-500 text-white">
+            <button
+              onClick={() => {
+                import('react-hot-toast').then(({ toast }) => {
+                  toast('🎉 Surprise ! YAMTIKEN gère vos alertes avec son IA pendant que vous prenez un café !', {
+                    icon: '🤖',
+                    style: {
+                      borderRadius: '10px',
+                      background: '#1A6B35',
+                      color: '#fff',
+                      fontSize: '14px'
+                    },
+                    duration: 5000
+                  });
+                });
+                if (onMarquerToutesLues) {
+                  setTimeout(() => onMarquerToutesLues(), 1500);
+                }
+              }}
+              className="animate-pulse px-3 py-1 rounded-full text-xs font-medium bg-red-500 text-white hover:bg-red-600 transition-all duration-300 transform hover:scale-110 active:scale-90 shadow-lg cursor-pointer"
+              title="Cliquez pour la magie !"
+            >
               Action requise
-            </span>
+            </button>
           )}
         </div>
       </div>

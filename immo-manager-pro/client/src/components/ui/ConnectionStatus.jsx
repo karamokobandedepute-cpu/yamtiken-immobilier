@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react';
 import { Wifi, WifiOff, Server, Database, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 
-const API_URL =
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.PROD ? 'http://54.36.209.70:5000/api' : '/api');
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export const ConnectionStatus = ({ showLabel = true, compact = false }) => {
   const [status, setStatus] = useState({

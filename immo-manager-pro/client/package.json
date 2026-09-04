@@ -9,9 +9,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "electron:dev": "electron electron/main.cjs",
-    "electron:build": "cross-env VITE_API_URL=http://localhost:5000/api VITE_SUPABASE_URL=https://ualdtjicekzyoobagfmf.supabase.co VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVhbGR0amljZWt6eW9vYmFnZm1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0OTU0NjAsImV4cCI6MjA5MzA3MTQ2MH0.db36vGw76szLp_wL8vUBn0-gVnJLV0k9zFnDKTj_DQc vite build && electron-builder",
+    "electron:build": "cross-env VITE_API_URL=http://localhost:5000/api vite build && electron-builder",
     "electron:pack": "cross-env VITE_API_URL=http://localhost:5000/api vite build && electron-builder --dir",
-    "cap:build": "cross-env VITE_API_URL=http://54.36.209.70:5000/api VITE_SUPABASE_URL=https://ualdtjicekzyoobagfmf.supabase.co VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVhbGR0amljZWt6eW9vYmFnZm1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0OTU0NjAsImV4cCI6MjA5MzA3MTQ2MH0.db36vGw76szLp_wL8vUBn0-gVnJLV0k9zFnDKTj_DQc vite build",
+    "cap:build": "vite build",
     "cap:sync": "npm run cap:build && npx cap sync android",
     "cap:android": "npm run cap:sync && npx cap open android"
   },

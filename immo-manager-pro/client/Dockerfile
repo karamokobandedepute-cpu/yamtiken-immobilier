@@ -1,33 +1,41 @@
 # ============================================================
 # DOCKERFILE FRONTEND - VITE + REACT
-# Optimisé pour le développement avec hot reload
+# Optimisé pour la production avec Nginx
 # ============================================================
-FROM node:20-alpine
 
-# Installation des dépendances système
-RUN apk add --no-cache wget curl
+# ÉTAPE 1 : Build
+FROM node:20-alpine AS build
 
-# Création du répertoire de travail
 WORKDIR /app
 
 # Copie des fichiers de dépendances
 COPY package*.json ./
-
-# Installation des dépendances
 RUN npm install
 
-# Copie du reste du code (sera écrasé par volume en dev)
+# Copie du code source
 COPY . .
 
-# Création du dossier logs
-RUN mkdir -p logs
+# Build de l'application
+RUN npm run build
 
-# Port exposé
+# ÉTAPE 2 : Production
+FROM nginx:alpine
+
+# Copie de la configuration Nginx
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copie des fichiers compilés depuis l'étape de build
+COPY --from=build /app/dist /usr/share/nginx/html
+
+# Création du dossier logs (pour le volume)
+RUN mkdir -p /app/logs
+
+# Port exposé (le port doit correspondre à nginx.conf et docker-compose)
 EXPOSE 5177
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD wget --quiet --tries=1 --spider http://localhost:5177 || exit 1
 
-# Commande de démarrage
-CMD ["npm", "run", "dev", "--", "--host", "--port", "5177"]
+# Lancement de Nginx
+CMD ["nginx", "-g", "daemon off;"]
