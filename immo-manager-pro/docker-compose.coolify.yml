@@ -78,12 +78,6 @@ services:
     ports:
       - "80"
       
-    # 🌐 LABELS TRAEFIK
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.immo-frontend.rule=Host(`yamtiken2026.online`)"
-      - "traefik.http.services.immo-frontend.loadbalancer.server.port=80"
-      
     # 🔄 INCASSABLE
     restart: always
     
