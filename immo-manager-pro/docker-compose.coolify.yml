@@ -83,7 +83,7 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=coolify"
       - "traefik.http.routers.frontend.rule=Host(`yamtiken2026.online`)"
-      - "traefik.http.routers.frontend.entrypoints=web,websecure"
+      - "traefik.http.routers.frontend.entrypoints=http,https"
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
       
     # 🔄 INCASSABLE
