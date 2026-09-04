@@ -14,6 +14,10 @@ services:
       dockerfile: Dockerfile
     container_name: immo-backend
     
+    # EXPOSE PORT
+    expose:
+      - "5002"
+      
     # 🔄 INCASSABLE - Toujours redémarrer
     restart: always
     
@@ -70,6 +74,10 @@ services:
       dockerfile: Dockerfile
     container_name: immo-frontend
     
+    # EXPOSE PORT
+    ports:
+      - "80"
+      
     # 🔄 INCASSABLE
     restart: always
     
