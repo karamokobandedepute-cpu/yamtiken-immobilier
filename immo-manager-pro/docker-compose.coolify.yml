@@ -58,6 +58,7 @@ services:
     
     # 🌐 RÉSEAU
     networks:
+      - coolify
       - immo-network
     
     # 📝 LOGS
@@ -81,7 +82,7 @@ services:
     
     # 🌐 PORTS & LABELS TRAEFIK
     ports:
-      - "5177:80"
+      - "80:80"
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
@@ -121,6 +122,7 @@ services:
     
     # 🌐 RÉSEAU
     networks:
+      - coolify
       - immo-network
     
     # 📝 LOGS
@@ -131,9 +133,11 @@ services:
         max-file: "3"
 
 # ============================================================
-# RÉSEAU INTERNE
+# RÉSEAU INTERNE & EXTERNE (COOLIFY)
 # ============================================================
 networks:
+  coolify:
+    external: true
   immo-network:
     driver: bridge
     ipam:
