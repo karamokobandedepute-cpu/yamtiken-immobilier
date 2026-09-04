@@ -12,8 +12,7 @@ module.exports = {
     },
     {
       name: "yamtiken-frontend",
-      script: process.platform === "win32" ? "npm.cmd" : "npm",
-      args: "run dev",
+      script: "./node_modules/vite/bin/vite.js",
       cwd: "./client",
       watch: false,
       env: {

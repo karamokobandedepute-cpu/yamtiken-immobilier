@@ -719,12 +719,17 @@ model Depense {
   id            Int       @id @default(autoincrement())
 
   // Informations de la dépense
-  motif         String                    // Raison courte (ex: "Achat fournitures bureau")
+  designation   String                    // Libellé court de la dépense
+  motif         String?                   // Raison détaillée (optionnel en DB)
   categorie     String                    // SALAIRE, FOURNITURE_BUREAU, REPARATION, etc.
   montant       Float                     // Montant en FCFA
   date          DateTime  @default(now()) // Date et heure exactes de la dépense
   description   String?                  // Détails supplémentaires (optionnel)
   reference     String?                  // Numéro de référence / bon de caisse
+  fournisseur   String?                  // Nom du fournisseur/bénéficiaire
+  statut        String?                  // PAYE, EN_ATTENTE, etc.
+  modePaiement  String?                  // ESPECES, VIREMENT, CHEQUE, etc.
+  notes         String?                  // Notes internes
 
   // Traçabilité — QUI a saisi la dépense
   createdById   Int       @map("created_by_id")
