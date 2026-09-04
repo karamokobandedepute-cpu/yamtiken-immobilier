@@ -55,8 +55,8 @@ services:
     
     # 🌐 RÉSEAU
     networks:
+      - default
       - coolify
-      - immo-network
     
     # 📝 LOGS
     logging:
@@ -77,15 +77,6 @@ services:
     # EXPOSE PORT
     ports:
       - "80"
-      
-    # 🌐 LABELS TRAEFIK
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.yamtiken.rule=Host(`yamtiken2026.online`)"
-      - "traefik.http.routers.yamtiken.entrypoints=websecure"
-      - "traefik.http.routers.yamtiken.tls=true"
-      - "traefik.http.routers.yamtiken.tls.certresolver=letsencrypt"
-      - "traefik.http.services.yamtiken.loadbalancer.server.port=80"
       
     # 🔄 INCASSABLE
     restart: always
@@ -125,8 +116,8 @@ services:
     
     # 🌐 RÉSEAU
     networks:
+      - default
       - coolify
-      - immo-network
     
     # 📝 LOGS
     logging:
@@ -141,8 +132,6 @@ services:
 networks:
   coolify:
     external: true
-  immo-network:
-    driver: bridge
 
 # ============================================================
 # VOLUMES PERSISTANTS
