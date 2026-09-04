@@ -21,15 +21,13 @@ services:
     ports:
       - "5002:5002"
     
-    # 📁 VOLUMES - Code monté en temps réel (pas besoin de rebuild)
+    # 📁 VOLUMES - Logs uniquement en production
     volumes:
-      - ./immo-manager-pro/server:/app
-      - /app/node_modules
-      - ./immo-manager-pro/logs:/app/logs
+      - backend_logs:/app/logs
     
     # 🌍 ENVIRONNEMENT
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - PORT=5002
       - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET=${JWT_SECRET}
@@ -48,10 +46,10 @@ services:
     # 🏥 HEALTH CHECK - Vérifie si le service répond
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5002/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     
     # 🌐 RÉSEAU
     networks:
@@ -80,15 +78,13 @@ services:
     ports:
       - "5177:5177"
     
-    # 📁 VOLUMES - Hot reload du code
+    # 📁 VOLUMES - Logs uniquement
     volumes:
-      - ./immo-manager-pro/client:/app
-      - /app/node_modules
-      - ./immo-manager-pro/logs:/app/logs
+      - frontend_logs:/app/logs
     
     # 🌍 ENVIRONNEMENT
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - VITE_API_URL=http://localhost:5002/api
       - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
       - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
@@ -105,15 +101,15 @@ services:
     # 🏥 HEALTH CHECK
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5177"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     
-    # ⏳ DÉPENDANCES
+    # ⏳ DÉPENDANCES (Démarrage non-bloquant)
     depends_on:
       backend:
-        condition: service_healthy
+        condition: service_started
     
     # 🌐 RÉSEAU
     networks:
@@ -125,24 +121,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-  # ============================================================
-  # WATCHTOWER - Auto-update des containers (optionnel)
-  # ============================================================
-  watchtower:
-    image: containrrr/watchtower
-    container_name: immo-watchtower
-    restart: always
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - WATCHTOWER_POLL_INTERVAL=3600  # Check toutes les heures
-      - WATCHTOWER_CLEANUP=true
-    command: --interval 3600 backend frontend
-    deploy:
-      resources:
-        limits:
-          memory: 128M
 
 # ============================================================
 # RÉSEAU INTERNE

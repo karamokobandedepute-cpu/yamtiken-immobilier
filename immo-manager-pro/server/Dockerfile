@@ -5,7 +5,7 @@
 FROM node:20-alpine
 
 # Installation des dépendances système
-RUN apk add --no-cache wget curl
+RUN apk add --no-cache wget curl openssl
 
 # Création du répertoire de travail
 WORKDIR /app
@@ -16,8 +16,11 @@ COPY package*.json ./
 # Installation des dépendances
 RUN npm install
 
-# Copie du reste du code (sera écrasé par volume en dev)
+# Copie du reste du code
 COPY . .
+
+# Génération du client Prisma pour l'environnement Linux Alpine
+RUN npx prisma generate
 
 # Création du dossier logs
 RUN mkdir -p logs
@@ -29,5 +32,5 @@ EXPOSE 5002
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD wget --quiet --tries=1 --spider http://localhost:5002/api/health || exit 1
 
-# Commande de démarrage
-CMD ["npm", "run", "dev"]
+# Commande de démarrage directe
+CMD ["node", "server.js"]
