@@ -3,10 +3,13 @@ import { persist } from 'zustand/middleware'
 import axios from 'axios'
 import { resetAuthErrorState } from '../utils/api'
 
-// URL API : dev → proxy Vite /api ; prod → VITE_API_URL ou VPS fixe
-const API_URL = import.meta.env.PROD
-  ? (import.meta.env.VITE_API_URL || 'http://localhost:5000/api')
-  : '/api'
+// URL de base API
+const isElectron = typeof window !== 'undefined' && window.location.protocol === 'app:';
+const API_URL = import.meta.env.VITE_API_URL || (
+  import.meta.env.PROD 
+    ? (isElectron ? 'http://localhost:5002/api' : '/api')
+    : 'http://localhost:5002/api'
+);
 
 export const useAuthStore = create(
   persist(

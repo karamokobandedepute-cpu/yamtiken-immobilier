@@ -37,10 +37,15 @@ import { captureError, addSentryBreadcrumb, addSentryContext } from '../lib/sent
 // Détection automatique de l'environnement
 const isProduction = import.meta.env.PROD || import.meta.env.NODE_ENV === 'production'
 
-// URL de base API — dev : proxy Vite /api ; prod : VITE_API_URL ou VPS fixe
-const API_URL = import.meta.env.PROD
-  ? (import.meta.env.VITE_API_URL || 'http://localhost:5000/api')
-  : '/api'
+// URL de base API
+// Prod: VITE_API_URL, sinon /api (reverse proxy Traefik unifié)
+// Dev: VITE_API_URL, sinon http://localhost:5002/api (ou /api via proxy Vite)
+const isElectron = typeof window !== 'undefined' && window.location.protocol === 'app:';
+const API_URL = import.meta.env.VITE_API_URL || (
+  import.meta.env.PROD 
+    ? (isElectron ? 'http://localhost:5002/api' : '/api')
+    : 'http://localhost:5002/api'
+);
 
 if (!isProduction) console.debug(`[API] Base URL: ${API_URL}`)
 

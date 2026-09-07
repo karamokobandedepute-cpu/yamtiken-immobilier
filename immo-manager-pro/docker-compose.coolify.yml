@@ -84,6 +84,8 @@ services:
     build:
       context: ./immo-manager-pro/client
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api}
     container_name: immo-frontend
     
     # EXPOSE PORT

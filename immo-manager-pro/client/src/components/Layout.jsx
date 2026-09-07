@@ -17,6 +17,7 @@ import {
   DollarSign,
   Shield,
   Sun,
+  Moon,
   Banknote
 } from 'lucide-react'
 import { useState, useEffect } from 'react'

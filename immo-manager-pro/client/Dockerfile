@@ -12,6 +12,10 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
+# ARG pour Vite (API URL dynamique)
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 # Copie du code source
 COPY . .
 

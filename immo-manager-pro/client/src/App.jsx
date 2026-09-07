@@ -37,7 +37,9 @@ function AppInner() {
 
   // Valider le token en ligne AU DÉMARRAGE avant tout prefetch
   useEffect(() => {
-    validateTokenOnline().finally(() => setTokenReady(true))
+    validateTokenOnline()
+      .catch((err) => console.error('[App] Erreur de validation du token:', err))
+      .finally(() => setTokenReady(true))
   }, [])
 
   // Synchronisation temps réel

@@ -99,16 +99,28 @@ const PROD_ALLOWED_ORIGINS = [
   'app://localhost',  // electron-serve (Electron packaged)
   'http://localhost:5173', // Electron dev
   'http://localhost:4173', // Vite preview
+  'http://localhost:3000', // React dev server default
 ]
+
+// Origines personnalisées via env (ex: pour inclure d'autres IP ou domaines)
+if (process.env.ALLOWED_ORIGINS) {
+  process.env.ALLOWED_ORIGINS.split(',').forEach(o => PROD_ALLOWED_ORIGINS.push(o.trim()))
+}
 
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
     ? (origin, callback) => {
-        // null origin = file:// ou requête non-browser (ex: Postman, Electron sans electron-serve)
-        if (!origin || PROD_ALLOWED_ORIGINS.includes(origin)) {
+        // Autoriser si l'origine est reconnue, ou si CORS_ALLOW_ALL est activé
+        if (!origin || PROD_ALLOWED_ORIGINS.includes(origin) || process.env.CORS_ALLOW_ALL === 'true') {
           callback(null, true)
         } else {
-          callback(new Error(`CORS bloqué: origine non autorisée → ${origin}`))
+          // Autoriser dynamiquement les connexions locales (ex: tester via IP sur mobile)
+          const isLocalNetwork = /^https?:\/\/(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(origin);
+          if (isLocalNetwork) {
+            callback(null, true)
+          } else {
+            callback(new Error(`CORS bloqué: origine non autorisée → ${origin}`))
+          }
         }
       }
     : true, // Dev : accepte toutes les origines
