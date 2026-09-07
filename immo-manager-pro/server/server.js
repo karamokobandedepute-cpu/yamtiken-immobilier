@@ -153,8 +153,8 @@ app.use(httpLogger);
 // Servir les uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Health check avec vérification DB
-app.get('/api/health', async (req, res) => {
+// Health check avec vérification DB (accessible sur /health et /api/health, GET et HEAD)
+const healthCheckHandler = async (req, res) => {
   let dbStatus = 'connected';
   let dbError = null;
   try {
@@ -176,6 +176,21 @@ app.get('/api/health', async (req, res) => {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development'
   });
+};
+
+app.all('/health', healthCheckHandler);
+app.all('/api/health', healthCheckHandler);
+
+// Réécriture automatique si /api/ est omis par le frontend (compatibilité totale)
+const API_SEGMENTS = ['auth', 'dashboard', 'users', 'clients', 'biens', 'contrats', 'visites', 'documents', 'notifications', 'buildings', 'referrers', 'leases', 'payments', 'alertes', 'recouvrement', 'commissions', 'admin', 'export', 'audit', 'caisse'];
+app.use((req, res, next) => {
+  if (!req.url.startsWith('/api') && !req.url.startsWith('/uploads') && !req.url.startsWith('/health')) {
+    const firstSegment = req.url.split('/')[1]?.split('?')[0];
+    if (API_SEGMENTS.includes(firstSegment)) {
+      req.url = `/api${req.url}`;
+    }
+  }
+  next();
 });
 
 // ============================================
