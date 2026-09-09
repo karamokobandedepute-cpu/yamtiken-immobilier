@@ -6,13 +6,13 @@
 import { useState, useEffect } from 'react'
 import { useCreateLease, useUpdateLease } from '../../hooks/useLeases'
 import { useCreateClient } from '../../hooks/useClients'
-import { X, Save, Loader2, FileText, User, Calendar, DollarSign, Home, Plus, UserPlus } from 'lucide-react'
+import api from '../../utils/api'
+import { X, Save, Loader2, FileText, User, Calendar, DollarSign, Home, Plus, UserPlus, Building2 } from 'lucide-react'
 
 const STATUT_OPTIONS = [
-  { value: 'actif', label: 'Actif', color: 'bg-green-100 text-green-700' },
-  { value: 'en_cours', label: 'En cours', color: 'bg-blue-100 text-blue-700' },
-  { value: 'expire', label: 'Expiré', color: 'bg-yellow-100 text-yellow-700' },
-  { value: 'resilie', label: 'Résilié', color: 'bg-red-100 text-red-700' }
+  { value: 'ACTIF', label: 'Actif', color: 'bg-green-100 text-green-700' },
+  { value: 'TERMINE', label: 'Terminé', color: 'bg-yellow-100 text-yellow-700' },
+  { value: 'RESILIE', label: 'Résilié', color: 'bg-red-100 text-red-700' }
 ]
 
 export default function LeaseForm({ lease = null, clients = [], isLoadingClients = false, onClose, onSuccess }) {
@@ -20,16 +20,20 @@ export default function LeaseForm({ lease = null, clients = [], isLoadingClients
   
   const [formData, setFormData] = useState({
     clientId: '',
-    bienId: '',
+    buildingId: '',
+    uniteId: '',
     dateDebut: new Date().toISOString().split('T')[0],
     dateFin: '',
     montantInitial: '',
     montantLoyer: '',
     caution: '',
-    statut: 'en_cours',
+    statut: 'ACTIF',
     notes: ''
   })
   
+  const [buildings, setBuildings] = useState([])
+  const [unites, setUnites] = useState([])
+  const [loadingUnites, setLoadingUnites] = useState(false)
   const [errors, setErrors] = useState({})
   const [showNewClientForm, setShowNewClientForm] = useState(false)
   const [createdClientLocal, setCreatedClientLocal] = useState(null)
@@ -66,18 +70,42 @@ export default function LeaseForm({ lease = null, clients = [], isLoadingClients
     }
   }
   
+  // Charger les immeubles et unités
+  useEffect(() => {
+    api.get('/buildings').then(r => {
+      const list = Array.isArray(r?.data) ? r.data : (r?.data?.data || [])
+      setBuildings(list)
+      if (list.length === 1 && !formData.buildingId) {
+        setFormData(prev => ({ ...prev, buildingId: list[0].id.toString() }))
+      }
+    }).catch(err => console.error('Erreur chargement immeubles:', err))
+  }, [])
+
+  useEffect(() => {
+    if (formData.buildingId) {
+      setLoadingUnites(true)
+      api.get(`/buildings/${formData.buildingId}/unites`).then(r => {
+        const list = Array.isArray(r?.data) ? r.data : (r?.data?.data || [])
+        setUnites(list)
+      }).catch(err => console.error('Erreur chargement unités:', err)).finally(() => setLoadingUnites(false))
+    } else {
+      setUnites([])
+    }
+  }, [formData.buildingId])
+
   // Remplir le formulaire si en mode édition
   useEffect(() => {
     if (lease) {
       setFormData({
         clientId: lease.clientId?.toString() || '',
-        bienId: lease.bienId?.toString() || '',
+        buildingId: lease.buildingId?.toString() || '',
+        uniteId: lease.uniteId?.toString() || '',
         dateDebut: lease.dateDebut?.split('T')[0] || '',
         dateFin: lease.dateFin?.split('T')[0] || '',
         montantInitial: lease.montantInitial?.toString() || '',
         montantLoyer: lease.montantLoyer?.toString() || '',
         caution: lease.caution?.toString() || '',
-        statut: lease.statut || 'en_cours',
+        statut: lease.statut || 'ACTIF',
         notes: lease.notes || ''
       })
     }
@@ -87,6 +115,8 @@ export default function LeaseForm({ lease = null, clients = [], isLoadingClients
     const newErrors = {}
     
     if (!formData.clientId) newErrors.clientId = 'Client requis'
+    if (!formData.buildingId) newErrors.buildingId = 'Immeuble requis'
+    if (!formData.uniteId) newErrors.uniteId = 'Unité / Porte requise'
     if (!formData.dateDebut) newErrors.dateDebut = 'Date de début requise'
     if (!formData.montantInitial || parseFloat(formData.montantInitial) <= 0) {
       newErrors.montantInitial = 'Montant initial invalide'
@@ -94,6 +124,22 @@ export default function LeaseForm({ lease = null, clients = [], isLoadingClients
     
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
+  }
+
+  const handleUniteChange = (uniteId) => {
+    const selected = unites.find(u => u.id.toString() === uniteId)
+    setFormData(prev => {
+      const next = { ...prev, uniteId }
+      if (selected && selected.loyerBase) {
+        if (!prev.montantLoyer || prev.montantLoyer === '0' || prev.montantLoyer === '') {
+          next.montantLoyer = selected.loyerBase.toString()
+        }
+        if (!prev.montantInitial || prev.montantInitial === '0' || prev.montantInitial === '') {
+          next.montantInitial = selected.loyerBase.toString()
+        }
+      }
+      return next
+    })
   }
   
   const handleSubmit = async (e) => {
@@ -104,7 +150,8 @@ export default function LeaseForm({ lease = null, clients = [], isLoadingClients
     const data = {
       ...formData,
       clientId: parseInt(formData.clientId),
-      bienId: formData.bienId ? parseInt(formData.bienId) : null,
+      buildingId: parseInt(formData.buildingId),
+      uniteId: parseInt(formData.uniteId),
       montantInitial: parseFloat(formData.montantInitial),
       montantLoyer: parseFloat(formData.montantLoyer) || 0,
       caution: parseFloat(formData.caution) || 0
@@ -258,6 +305,69 @@ export default function LeaseForm({ lease = null, clients = [], isLoadingClients
               })()}
             </div>
             
+            {/* Immeuble et Unité */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <Building2 className="w-4 h-4 inline mr-1" />
+                  Immeuble *
+                </label>
+                <select
+                  value={formData.buildingId}
+                  onChange={(e) => setFormData({ ...formData, buildingId: e.target.value, uniteId: '' })}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    errors.buildingId ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  required
+                >
+                  <option value="">Sélectionnez un immeuble</option>
+                  {buildings.map((b) => (
+                    <option key={b.id} value={b.id}>{b.nom}</option>
+                  ))}
+                </select>
+                {errors.buildingId && (
+                  <p className="mt-1 text-sm text-red-600">{errors.buildingId}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <Home className="w-4 h-4 inline mr-1" />
+                  Unité / Porte * {loadingUnites && <span className="text-xs text-gray-400">(chargement...)</span>}
+                </label>
+                <select
+                  value={formData.uniteId}
+                  onChange={(e) => handleUniteChange(e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    errors.uniteId ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  disabled={!formData.buildingId || loadingUnites}
+                  required
+                >
+                  <option value="">{formData.buildingId ? 'Sélectionnez une porte' : 'Choisir immeuble d\'abord'}</option>
+                  {unites.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      #{u.numeroPorte} — {u.typeUnite} {u.loyerBase ? `(${Number(u.loyerBase).toLocaleString()} F)` : ''} {u.statut === 'VACANT' ? '✅ Libre' : u.statut === 'OCCUPE' ? '🔴 Occupé' : '🟡 Réservé'}
+                    </option>
+                  ))}
+                </select>
+                {errors.uniteId && (
+                  <p className="mt-1 text-sm text-red-600">{errors.uniteId}</p>
+                )}
+                {(() => {
+                  const selU = unites.find(u => u.id.toString() === formData.uniteId)
+                  if (selU && selU.statut === 'OCCUPE' && !isEditing) {
+                    return (
+                      <p className="text-xs text-red-600 mt-1 font-medium">
+                        ⚠️ Attention : cette porte est actuellement occupée
+                      </p>
+                    )
+                  }
+                  return null
+                })()}
+              </div>
+            </div>
+
             {/* Dates */}
             <div className="grid grid-cols-2 gap-4">
               <div>

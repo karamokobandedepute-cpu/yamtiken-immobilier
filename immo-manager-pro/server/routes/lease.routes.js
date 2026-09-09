@@ -9,18 +9,40 @@ import { invalidateDashboard, getOrCompute, CACHE_KEYS } from '../lib/cache.js';
 const router = express.Router();
 
 
-// Fonction pour générer un numéro de bail unique
+// Fonction pour générer un numéro de bail unique garanti sans collision
 const generateNumeroBail = async () => {
   const year = new Date().getFullYear();
-  const count = await prisma.lease.count({
+  const prefix = `BAIL-${year}-`;
+  
+  const leasesThisYear = await prisma.lease.findMany({
     where: {
       numeroBail: {
-        startsWith: `BAIL-${year}-`
+        startsWith: prefix
+      }
+    },
+    select: { numeroBail: true }
+  });
+
+  let maxSeq = 0;
+  for (const l of leasesThisYear) {
+    if (l.numeroBail) {
+      const parts = l.numeroBail.split('-');
+      const num = parseInt(parts[parts.length - 1], 10);
+      if (!isNaN(num) && num > maxSeq) {
+        maxSeq = num;
       }
     }
-  });
-  const sequence = String(count + 1).padStart(5, '0');
-  return `BAIL-${year}-${sequence}`;
+  }
+
+  let nextSeq = maxSeq + 1;
+  let candidate = `${prefix}${String(nextSeq).padStart(5, '0')}`;
+
+  while (await prisma.lease.findUnique({ where: { numeroBail: candidate } })) {
+    nextSeq++;
+    candidate = `${prefix}${String(nextSeq).padStart(5, '0')}`;
+  }
+
+  return candidate;
 };
 
 // GET /api/leases/stats/overview - ⚠️ DOIT être avant /:id sinon jamais atteint
@@ -159,34 +181,86 @@ router.post('/', verifyToken, canManageContrats, audit('lease', 'CREATE'), async
     const data = req.body;
     console.log('[POST /leases] Données reçues:', JSON.stringify(data, null, 2));
 
-    if (!data.clientId) return res.status(400).json({ message: 'Client requis' });
-    if (!data.montantInitial) return res.status(400).json({ message: 'Montant initial requis' });
-    if (!data.dateDebut) return res.status(400).json({ message: 'Date de début requise' });
+    if (!data.clientId) {
+      return res.status(400).json({ message: 'Veuillez sélectionner un client.' });
+    }
+    if (!data.buildingId) {
+      return res.status(400).json({ message: 'Veuillez sélectionner un immeuble.' });
+    }
+    if (!data.uniteId) {
+      return res.status(400).json({ message: 'Veuillez sélectionner une unité (porte).' });
+    }
+    const montantInit = parseFloat(data.montantInitial);
+    if (isNaN(montantInit) || montantInit <= 0) {
+      return res.status(400).json({ message: 'Le montant initial doit être supérieur à 0 FCFA.' });
+    }
+    if (!data.dateDebut) {
+      return res.status(400).json({ message: 'La date de signature ou de début est requise.' });
+    }
 
-    // Générer numéro de bail unique
+    // Valeurs validées
+    const clientId     = parseInt(data.clientId);
+    const buildingId   = parseInt(data.buildingId);
+    const uniteId      = parseInt(data.uniteId);
+    const montantLoyer = parseFloat(data.montantLoyer) || 0;
+    const caution      = parseFloat(data.caution) || 0;
+    const dateDebut    = new Date(data.dateDebut);
+    const dateFin      = data.dateFin ? new Date(data.dateFin) : null;
+
+    // Normalisation stricte du statut pour l'ENUM PostgreSQL StatutLease ('ACTIF', 'TERMINE', 'RESILIE')
+    let statut = 'ACTIF';
+    if (data.statut) {
+      const upper = String(data.statut).toUpperCase();
+      if (['ACTIF', 'TERMINE', 'RESILIE'].includes(upper)) {
+        statut = upper;
+      } else if (upper === 'EN_COURS') {
+        statut = 'ACTIF';
+      } else if (upper === 'EXPIRE') {
+        statut = 'TERMINE';
+      }
+    }
+
+    // Vérifier si l'unité est déjà occupée par un autre bail actif
+    const existingActiveLease = await prisma.lease.findFirst({
+      where: {
+        uniteId,
+        statut: 'ACTIF',
+        deletedAt: null
+      },
+      include: {
+        client: { select: { nom: true, prenom: true } }
+      }
+    });
+
+    if (existingActiveLease) {
+      const locataireNom = existingActiveLease.client ? `${existingActiveLease.client.prenom || ''} ${existingActiveLease.client.nom || ''}`.trim() : 'un autre client';
+      return res.status(400).json({ 
+        message: `Cette unité/porte est déjà occupée par un bail actif (${existingActiveLease.numeroBail} - ${locataireNom}). Veuillez libérer la porte ou en choisir une autre.` 
+      });
+    }
+
+    // Générer numéro de bail unique garanti sans collision
     const numeroBail = await generateNumeroBail();
     console.log('[POST /leases] Numéro bail généré:', numeroBail);
 
-    // Valeurs
-    const clientId     = parseInt(data.clientId);
-    const buildingId   = data.buildingId ? parseInt(data.buildingId) : null;
-    const uniteId      = data.uniteId    ? parseInt(data.uniteId)    : null;
-    const montantInit  = parseFloat(data.montantInitial) || 0;
-    const caution      = parseFloat(data.caution)  || 0;
-    const dateDebut    = new Date(data.dateDebut);
-    const dateFin      = data.dateFin ? new Date(data.dateFin) : null;
-    const statut       = data.statut || 'ACTIF';
-
-    // INSERT via SQL brut pour gérer les nulls sur les FK
-    const sql = 'INSERT INTO public.leases ("numeroBail","clientId","buildingId","uniteId","montantInitial","caution","dateDebut","dateFin","statut","createdAt","updatedAt") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::' + '"StatutLease"' + ',NOW(),NOW()) RETURNING *';
+    // INSERT via SQL brut avec gestion de montantLoyer et StatutLease
+    const sql = 'INSERT INTO public.leases ("numeroBail","clientId","buildingId","uniteId","montantInitial","caution","montantLoyer","dateDebut","dateFin","statut","createdAt","updatedAt") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::"StatutLease",NOW(),NOW()) RETURNING *';
     const result = await prisma.$queryRawUnsafe(
       sql,
       numeroBail, clientId, buildingId, uniteId,
-      montantInit, caution, dateDebut, dateFin, statut
+      montantInit, caution, montantLoyer, dateDebut, dateFin, statut
     );
 
     const lease = result[0];
     console.log('[POST /leases] Bail créé avec succès, ID:', lease.id);
+
+    // Mettre à jour le statut de l'unité en OCCUPE si le bail est actif
+    if (statut === 'ACTIF' && uniteId) {
+      await prisma.unite.update({
+        where: { id: uniteId },
+        data: { statut: 'OCCUPE' }
+      }).catch(err => console.warn('[POST /leases] Notification statut unité:', err.message));
+    }
 
     try { await req.audit({ recordId: lease.id, newData: lease }); } catch (_) {}
     invalidateDashboard();
@@ -195,10 +269,16 @@ router.post('/', verifyToken, canManageContrats, audit('lease', 'CREATE'), async
   } catch (error) {
     console.error('[POST /leases] ERREUR:', error.message, error.code);
     if (error.code === 'P2002' || error.code === '23505') {
-      return res.status(400).json({ message: 'Un bail avec ce numéro existe déjà' });
+      return res.status(400).json({ message: 'Un bail avec ce numéro existe déjà. Veuillez réessayer.' });
     }
     if (error.code === '23503') {
       return res.status(400).json({ message: 'Client, immeuble ou unité introuvable. Vérifiez les sélections.' });
+    }
+    if (error.code === '23502') {
+      return res.status(400).json({ message: 'Informations obligatoires manquantes (client, immeuble ou unité requis).' });
+    }
+    if (error.code === '22P02') {
+      return res.status(400).json({ message: 'Format de statut ou de données invalide pour la base de données.' });
     }
     res.status(500).json({ message: 'Erreur lors de la création du bail', details: error.message });
   }

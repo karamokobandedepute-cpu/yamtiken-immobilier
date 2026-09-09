@@ -96,7 +96,8 @@ const ContratsPage = () => {
   const loadBuildings = async () => {
     try {
       const response = await fetchBuildings()
-      setBuildings(response.data.data || [])
+      const list = Array.isArray(response?.data) ? response.data : (response?.data?.data || [])
+      setBuildings(list)
     } catch (error) {
       console.error('Erreur chargement buildings:', error)
     }
@@ -1158,6 +1159,7 @@ const LeaseFormModal = ({ lease, buildings, onClose, onSuccess }) => {
   const isEditing = !!lease
   const [clients, setClients] = useState([])
   const [unites, setUnites] = useState([])
+  const [internalBuildings, setInternalBuildings] = useState(buildings || [])
   const [loading, setLoading] = useState(false)
   const [loadingClients, setLoadingClients] = useState(true)
   const [loadingUnites, setLoadingUnites] = useState(false)
@@ -1177,6 +1179,26 @@ const LeaseFormModal = ({ lease, buildings, onClose, onSuccess }) => {
     statut: 'ACTIF',
     notes: ''
   })
+
+  // Synchroniser ou charger les immeubles si non fournis
+  useEffect(() => {
+    if (!buildings || buildings.length === 0) {
+      api.get('/buildings').then(r => {
+        const list = Array.isArray(r?.data) ? r.data : (r?.data?.data || [])
+        setInternalBuildings(list)
+      }).catch(err => console.error('Erreur chargement immeubles modal:', err))
+    } else {
+      setInternalBuildings(buildings)
+    }
+  }, [buildings])
+
+  // Auto-sélectionner l'immeuble s'il n'y en a qu'un seul
+  useEffect(() => {
+    if (!formData.buildingId && internalBuildings.length === 1) {
+      const singleBuildingId = internalBuildings[0].id.toString()
+      setFormData(prev => ({ ...prev, buildingId: singleBuildingId }))
+    }
+  }, [internalBuildings, formData.buildingId])
 
   // Charger les clients au montage
   useEffect(() => { loadClients() }, [])
@@ -1219,8 +1241,6 @@ const LeaseFormModal = ({ lease, buildings, onClose, onSuccess }) => {
     try {
       setLoadingClients(true)
       const { data } = await api.get('/clients')
-      console.log('Clients chargés:', data)
-      // La réponse peut être { data: [...] } ou directement [...]
       const clientsList = Array.isArray(data) ? data : (data?.data || [])
       setClients(clientsList)
     } catch (error) {
@@ -1244,6 +1264,22 @@ const LeaseFormModal = ({ lease, buildings, onClose, onSuccess }) => {
     } finally {
       setLoadingUnites(false)
     }
+  }
+
+  const handleUniteChange = (uniteId) => {
+    const selected = unites.find(u => u.id.toString() === uniteId)
+    setFormData(prev => {
+      const next = { ...prev, uniteId }
+      if (selected && selected.loyerBase) {
+        if (!prev.montantLoyer || prev.montantLoyer === '0' || prev.montantLoyer === '') {
+          next.montantLoyer = selected.loyerBase.toString()
+        }
+        if (!prev.montantInitial || prev.montantInitial === '0' || prev.montantInitial === '') {
+          next.montantInitial = selected.loyerBase.toString()
+        }
+      }
+      return next
+    })
   }
 
   // Filtrer les clients selon la recherche
@@ -1270,8 +1306,21 @@ const LeaseFormModal = ({ lease, buildings, onClose, onSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    if (!formData.clientId || !formData.montantInitial) {
-      toast.error('Client et montant initial sont requis')
+    if (!formData.clientId) {
+      toast.error('Veuillez sélectionner un client')
+      return
+    }
+    if (!formData.buildingId) {
+      toast.error('Veuillez sélectionner un immeuble')
+      return
+    }
+    if (!formData.uniteId) {
+      toast.error('Veuillez sélectionner une unité (porte)')
+      return
+    }
+    const montant = parseFloat(formData.montantInitial)
+    if (isNaN(montant) || montant <= 0) {
+      toast.error('Le montant initial doit être supérieur à 0 FCFA')
       return
     }
 
@@ -1280,9 +1329,9 @@ const LeaseFormModal = ({ lease, buildings, onClose, onSuccess }) => {
       const data = {
         ...formData,
         clientId: parseInt(formData.clientId),
-        buildingId: formData.buildingId ? parseInt(formData.buildingId) : null,
-        uniteId: formData.uniteId ? parseInt(formData.uniteId) : null,
-        montantInitial: parseFloat(formData.montantInitial),
+        buildingId: parseInt(formData.buildingId),
+        uniteId: parseInt(formData.uniteId),
+        montantInitial: montant,
         montantLoyer: parseFloat(formData.montantLoyer) || 0,
         caution: parseFloat(formData.caution) || 0
       }
@@ -1414,37 +1463,52 @@ const LeaseFormModal = ({ lease, buildings, onClose, onSuccess }) => {
           {/* Bâtiment et Unité */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: '#374151' }}>Immeuble</label>
+              <label className="block text-sm font-medium mb-1" style={{ color: '#374151' }}>
+                Immeuble <span className="text-red-500">*</span>
+              </label>
               <select
                 value={formData.buildingId}
                 onChange={(e) => setFormData({ ...formData, buildingId: e.target.value, uniteId: '' })}
                 className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2"
                 style={{ borderColor: '#E8F5EC' }}
+                required
               >
-                <option value="">Sélectionnez</option>
-                {buildings.map((b) => (
+                <option value="">Sélectionnez un immeuble</option>
+                {internalBuildings.map((b) => (
                   <option key={b.id} value={b.id}>{b.nom}</option>
                 ))}
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1" style={{ color: '#374151' }}>
-                Unité {loadingUnites && <span className="text-xs text-gray-400">(chargement...)</span>}
+                Unité / Porte <span className="text-red-500">*</span> {loadingUnites && <span className="text-xs text-gray-400">(chargement...)</span>}
               </label>
               <select
                 value={formData.uniteId}
-                onChange={(e) => setFormData({ ...formData, uniteId: e.target.value })}
+                onChange={(e) => handleUniteChange(e.target.value)}
                 className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2"
                 style={{ borderColor: '#E8F5EC' }}
                 disabled={!formData.buildingId || loadingUnites}
+                required
               >
-                <option value="">{formData.buildingId ? 'Sélectionnez une unité' : 'Choisir immeuble d\'abord'}</option>
+                <option value="">{formData.buildingId ? 'Sélectionnez une unité / porte' : 'Choisir immeuble d\'abord'}</option>
                 {unites.map((u) => (
                   <option key={u.id} value={u.id}>
-                    #{u.numeroPorte} — {u.typeUnite} ({u.statut === 'VACANT' ? '✅ Libre' : u.statut === 'OCCUPE' ? '🔴 Occupé' : '🟡 Réservé'})
+                    #{u.numeroPorte} — {u.typeUnite} {u.loyerBase ? `(${Number(u.loyerBase).toLocaleString()} FCFA)` : ''} {u.statut === 'VACANT' ? '✅ Libre' : u.statut === 'OCCUPE' ? '🔴 Occupé' : '🟡 Réservé'}
                   </option>
                 ))}
               </select>
+              {(() => {
+                const selectedU = unites.find(u => u.id.toString() === formData.uniteId)
+                if (selectedU && selectedU.statut === 'OCCUPE' && !isEditing) {
+                  return (
+                    <p className="text-xs text-red-600 mt-1 font-medium">
+                      ⚠️ Attention : cette porte est actuellement notée comme occupée.
+                    </p>
+                  )
+                }
+                return null
+              })()}
             </div>
           </div>
 
