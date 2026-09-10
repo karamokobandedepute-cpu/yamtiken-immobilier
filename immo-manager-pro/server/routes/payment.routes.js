@@ -14,15 +14,36 @@ const router = express.Router();
 // Fonction pour générer un numéro de facture unique
 const generateNumeroFacture = async () => {
   const year = new Date().getFullYear();
-  const count = await prisma.payment.count({
+  const prefix = `FAC-${year}-`;
+
+  // Chercher le dernier numéro existant (inclut les enregistrements supprimés)
+  const dernierPaiement = await prisma.payment.findFirst({
     where: {
-      numeroFacture: {
-        startsWith: `FAC-${year}-`
-      }
-    }
+      numeroFacture: { startsWith: prefix }
+    },
+    orderBy: { numeroFacture: 'desc' },
+    select: { numeroFacture: true }
   });
-  const sequence = String(count + 1).padStart(5, '0');
-  return `FAC-${year}-${sequence}`;
+
+  let nextNum = 1;
+  if (dernierPaiement?.numeroFacture) {
+    const dernierNumStr = dernierPaiement.numeroFacture.replace(prefix, '');
+    const dernierNum = parseInt(dernierNumStr, 10);
+    if (!isNaN(dernierNum)) {
+      nextNum = dernierNum + 1;
+    }
+  }
+
+  // Boucle de sécurité : s'assurer que le numéro n'existe pas déjà
+  let numeroFacture = `${prefix}${String(nextNum).padStart(5, '0')}`;
+  let exists = await prisma.payment.findFirst({ where: { numeroFacture } });
+  while (exists) {
+    nextNum += 1;
+    numeroFacture = `${prefix}${String(nextNum).padStart(5, '0')}`;
+    exists = await prisma.payment.findFirst({ where: { numeroFacture } });
+  }
+
+  return numeroFacture;
 };
 
 // GET /api/payments - Liste des paiements (paginée + recherche)
