@@ -6,7 +6,6 @@ const router = express.Router();
 
 // Mock OCR
 router.post('/ocr-cni', async (req, res) => {
-  // Dans un cas réel : appel à Google Cloud Vision ou Gemini 1.5 Pro
   res.json({
     success: true,
     data: {
@@ -26,7 +25,6 @@ router.get('/scoring/:clientId', async (req, res) => {
   
   if (!client) return res.status(404).json({ error: "Client non trouvé" });
 
-  // Algorithme de prédiction (Mock)
   const scoreRisque = (Math.random() * 100).toFixed(2);
   const niveauRisque = scoreRisque < 30 ? "FAIBLE" : (scoreRisque < 70 ? "MOYEN" : "ELEVÉ");
 
@@ -35,7 +33,37 @@ router.get('/scoring/:clientId', async (req, res) => {
     data: { scoreRisque: parseFloat(scoreRisque), niveauRisque }
   });
 
-  res.json({ scoreRisque, niveauRisque, recommandations: "Surveiller les paiements de ce mois-ci." });
+  res.json({ scoreRisque, niveauRisque, recommandations: "Surveiller les paiements." });
+});
+
+// ROUTE TEMPORAIRE POUR NETTOYER LA BASE DE DONNÉES EN PRODUCTION
+router.get('/fix-db', async (req, res) => {
+  try {
+    const models = ['payment', 'lease', 'unite', 'building', 'client', 'facture', 'paiement', 'visite', 'commission', 'bien', 'referrer', 'user', 'alerte', 'notification', 'document', 'relance', 'auditLog', 'depense', 'contrat'];
+    let total = 0;
+    const results = {};
+    for (const m of models) {
+      if (prisma[m]) {
+        try {
+          // Delete all records where isDemo is true
+          const result = await prisma[m].deleteMany({ where: { isDemo: true } });
+          if (result.count > 0) {
+            results[m] = result.count;
+            total += result.count;
+          }
+        } catch(e) {
+          // Ignore errors for models that might not have isDemo
+        }
+      }
+    }
+    res.json({
+      success: true,
+      message: `Nettoyage terminé avec succès. ${total} éléments supprimés.`,
+      details: results
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 export default router;
