@@ -160,7 +160,7 @@ const Layout = () => {
   }
 
   return (
-    <div className="flex h-screen" style={{ background: '#F9FFF9' }}>
+    <div className="flex h-screen overflow-hidden relative" style={{ background: '#F9FFF9' }}>
       <ConfirmDialog
         open={showLogoutConfirm}
         title="Déconnexion"
@@ -181,7 +181,7 @@ const Layout = () => {
 
       {/* Sidebar - 240px fixe */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 transition-transform duration-300 ease-in-out`}
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col transition-transform duration-300 ease-in-out shadow-2xl`}
         style={{
           width: '240px',
           background: '#0D3B1F',
@@ -295,7 +295,7 @@ const Layout = () => {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out" style={{ marginLeft: isMobile ? '0' : (isSidebarOpen ? '240px' : '0') }}>
         {/* Header - 64px avec bordure gold */}
         <header
           className="h-16 bg-white flex items-center justify-between px-6 flex-shrink-0"
@@ -308,7 +308,7 @@ const Layout = () => {
             {/* Bouton hamburger mobile */}
             <button
               onClick={toggleSidebar}
-              className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
               style={{ color: '#0D3B1F' }}
             >
               {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
@@ -387,3 +387,8 @@ const Layout = () => {
 }
 
 export default Layout
+
+
+
+
+

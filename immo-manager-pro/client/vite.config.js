@@ -2,9 +2,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [react()],
-  base: './', // Chemins relatifs — requis pour electron-serve (app:// protocol)
+  base: command === 'serve' ? '/' : './',
   server: {
     host: '0.0.0.0',
     allowedHosts: true,
@@ -28,4 +28,5 @@ export default defineConfig({
     },
     chunkSizeWarningLimit: 2000 // On augmente la limite pour éviter les alertes
   }
-})
+}))
+

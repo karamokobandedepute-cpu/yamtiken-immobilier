@@ -64,25 +64,23 @@ export const getAllClients = async (req, res) => {
         COALESCE(lease_agg."montantInitialTotal", 0) as "leaseMontantInitial",
         COALESCE(pay_agg."totalPaye", 0) as "totalPaye",
         GREATEST(0, COALESCE(lease_agg."montantInitialTotal", 0) - COALESCE(pay_agg."totalPaye", 0)) as "soldeDu"
-      FROM public.clients c
-      LEFT JOIN (
+      FROM public.clients c 
+        LEFT JOIN (
         SELECT "clientId", COUNT(*)::INTEGER as "nbBaux"
-        FROM public.leases
-        GROUP BY "clientId"
+        FROM public.leases WHERE "deletedAt" IS NULL AND is_demo = false GROUP BY "clientId"
       ) lease_counts ON c.id = lease_counts."clientId"
       LEFT JOIN (
         SELECT "clientId", SUM("montantInitial") as "montantInitialTotal"
         FROM public.leases
-        WHERE statut = 'ACTIF'::"StatutLease"
+        WHERE statut = 'ACTIF'::"StatutLease" AND "deletedAt" IS NULL AND is_demo = false
         GROUP BY "clientId"
       ) lease_agg ON c.id = lease_agg."clientId"
       LEFT JOIN (
         SELECT l."clientId", SUM(p."montantVerse") as "totalPaye"
         FROM public.payments p
-        JOIN public.leases l ON p."leaseId" = l.id
-        GROUP BY l."clientId"
+        JOIN public.leases l ON p."leaseId" = l.id WHERE p."deletedAt" IS NULL AND p.is_demo = false AND l."deletedAt" IS NULL AND l.is_demo = false GROUP BY l."clientId"
       ) pay_agg ON c.id = pay_agg."clientId"
-      WHERE 1=1
+        WHERE c."deletedAt" IS NULL AND c.is_demo = false
     `;
     
     const params = [];
@@ -107,7 +105,7 @@ export const getAllClients = async (req, res) => {
     }
     
     // Compter le total avec une requête COUNT dédiée propre et performante
-    let countSql = `SELECT COUNT(*)::INTEGER as total FROM public.clients c WHERE 1=1`;
+    let countSql = `SELECT COUNT(*)::INTEGER as total FROM public.clients c WHERE c.is_demo = false`;
     const countParams = [];
     let countIndex = 1;
     if (deletedAt === 'not.null') {
@@ -554,3 +552,5 @@ export default {
   generateClientPDF,
   getClientStats
 };
+
+

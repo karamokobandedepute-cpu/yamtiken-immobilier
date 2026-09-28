@@ -30,51 +30,57 @@ router.get('/kpi', verifyToken, readOnlyDirection, async (req, res) => {
         bauxExpirant
       ] = await Promise.all([
         prisma.payment.aggregate({
-          where: { datePaiement: { gte: startOfMonth } },
+          where: { datePaiement: { gte: startOfMonth }, deletedAt: null, isDemo: false },
           _sum: { montantVerse: true }
         }),
         prisma.payment.aggregate({
-          where: { datePaiement: { gte: startOfYear } },
+          where: { datePaiement: { gte: startOfYear }, deletedAt: null, isDemo: false },
           _sum: { montantVerse: true }
         }),
         prisma.lease.aggregate({
-          where: { statut: 'ACTIF' },
+          where: { statut: 'ACTIF', deletedAt: null, isDemo: false },
           _sum: { montantInitial: true }
         }).then(async (result) => {
           const totalDu = result._sum.montantInitial || 0;
           const totalPaye = await prisma.payment.aggregate({
-            where: { lease: { statut: 'ACTIF' } },
+            where: { lease: { statut: 'ACTIF', deletedAt: null, isDemo: false }, deletedAt: null, isDemo: false },
             _sum: { montantVerse: true }
           });
           return totalDu - (totalPaye._sum.montantVerse || 0);
         }),
         Promise.all([
-          prisma.lease.count({ where: { statut: 'ACTIF' } }),
-          prisma.unite.count()
+          prisma.lease.count({ where: { statut: 'ACTIF', deletedAt: null, isDemo: false } }),
+          prisma.unite.count({ where: { deletedAt: null, isDemo: false } })
         ]).then(([actives, total]) => ({
           taux: total > 0 ? ((actives / total) * 100).toFixed(1) : 0,
           actives,
           total
         })),
         prisma.lease.aggregate({
-          where: { statut: 'ACTIF', dateDebut: { lte: today } },
+          where: { statut: 'ACTIF', dateDebut: { lte: today }, deletedAt: null, isDemo: false },
           _sum: { montantInitial: true }
         }).then((result) => (result._sum.montantInitial || 0) / 12),
         prisma.client.count({
-          where: { createdAt: { gte: startOfMonth } }
+          where: { createdAt: { gte: startOfMonth }, deletedAt: null, isDemo: false }
         }),
         prisma.payment.aggregate({
+          where: { deletedAt: null, isDemo: false },
           _sum: { montantVerse: true }
         }).then(async (encaissements) => {
           const commissionsPayees = await prisma.commission.aggregate({
             where: { statut: 'PAYEE' },
             _sum: { montant: true }
-          });
-          return (encaissements._sum.montantVerse || 0) - (commissionsPayees._sum.montant || 0);
+          }).catch(() => ({ _sum: { montant: 0 } }));
+          const depenses = await prisma.depense.aggregate({
+            where: { deletedAt: null, isDemo: false },
+            _sum: { montant: true }
+          }).catch(() => ({ _sum: { montant: 0 } }));
+          return (encaissements._sum.montantVerse || 0) - (commissionsPayees._sum.montant || 0) - (depenses._sum.montant || 0);
         }),
         prisma.lease.count({
           where: {
             statut: 'ACTIF',
+            deletedAt: null, isDemo: false,
             dateFin: {
               gte: startOfMonth,
               lte: new Date(today.getFullYear(), today.getMonth() + 1, 0)
@@ -116,7 +122,7 @@ router.get('/revenus-courbe', verifyToken, readOnlyDirection, async (req, res) =
           const mois = new Date(aujourdhui.getFullYear(), aujourdhui.getMonth() - i, 1);
           const moisFin = new Date(aujourdhui.getFullYear(), aujourdhui.getMonth() - i + 1, 0);
           return prisma.payment.aggregate({
-            where: { datePaiement: { gte: mois, lte: moisFin } },
+            where: { datePaiement: { gte: mois, lte: moisFin }, deletedAt: null, isDemo: false },
             _sum: { montantVerse: true }
           }).then(result => ({
             mois: mois.toLocaleString('fr-FR', { month: 'short' }),
@@ -139,6 +145,7 @@ router.get('/occupation-par-type', verifyToken, readOnlyDirection, async (req, r
   try {
     const data = await getOrCompute(CACHE_KEYS.DASHBOARD_OCCUPATION, async () => {
       const unites = await prisma.unite.findMany({
+        where: { deletedAt: null, isDemo: false },
         select: { typeUnite: true, statut: true }
       });
       const grouped = {};
@@ -172,12 +179,15 @@ router.get('/revenus-par-immeuble', verifyToken, readOnlyDirection, async (req, 
     const data = await getOrCompute(CACHE_KEYS.DASHBOARD_REVENUS_IMMEUBLE, async () => {
       // Utiliser la relation Lease ↔ Building maintenant disponible
       const buildings = await prisma.building.findMany({
+        where: { deletedAt: null, isDemo: false },
         select: {
           id: true,
           nom: true,
           leases: {
+            where: { deletedAt: null, isDemo: false },
             select: {
               payments: {
+                where: { deletedAt: null, isDemo: false },
                 select: { montantVerse: true }
               }
             }
@@ -225,22 +235,25 @@ router.get('/rapport-mensuel', verifyToken, readOnlyDirection, async (req, res) 
       // Entrées (paiements)
       prisma.payment.aggregate({
         where: {
-          datePaiement: { gte: startOfMonth, lte: endOfMonth }
+          datePaiement: { gte: startOfMonth, lte: endOfMonth },
+          deletedAt: null, isDemo: false
         },
         _sum: { montantVerse: true }
       }),
 
       // Nouveaux clients
       prisma.client.count({
-        where: { createdAt: { gte: startOfMonth, lte: endOfMonth } }
+        where: { createdAt: { gte: startOfMonth, lte: endOfMonth }, deletedAt: null, isDemo: false }
       }),
 
       // Clients actifs (avec bail en cours)
       prisma.client.count({
         where: {
+          deletedAt: null, isDemo: false,
           leases: {
             some: {
               statut: 'ACTIF',
+              deletedAt: null, isDemo: false,
               dateDebut: { lte: endOfMonth }
             }
           }
@@ -251,13 +264,14 @@ router.get('/rapport-mensuel', verifyToken, readOnlyDirection, async (req, res) 
       prisma.lease.count({
         where: {
           statut: 'TERMINE',
+          deletedAt: null, isDemo: false,
           dateFin: { gte: startOfMonth, lte: endOfMonth }
         }
       }),
 
       // Solde de caisse
       prisma.payment.aggregate({
-        where: { datePaiement: { lte: endOfMonth } },
+        where: { datePaiement: { lte: endOfMonth }, deletedAt: null, isDemo: false },
         _sum: { montantVerse: true }
       }).then(async (total) => {
         const commissions = await prisma.commission.aggregate({
@@ -266,14 +280,22 @@ router.get('/rapport-mensuel', verifyToken, readOnlyDirection, async (req, res) 
             datePaiement: { lte: endOfMonth }
           },
           _sum: { montant: true }
-        });
-        return (total._sum.montantVerse || 0) - (commissions._sum.montant || 0);
+        }).catch(() => ({ _sum: { montant: 0 } }));
+        const depenses = await prisma.depense.aggregate({
+          where: {
+            date: { lte: endOfMonth },
+            deletedAt: null, isDemo: false
+          },
+          _sum: { montant: true }
+        }).catch(() => ({ _sum: { montant: 0 } }));
+        return (total._sum.montantVerse || 0) - (commissions._sum.montant || 0) - (depenses._sum.montant || 0);
       }),
 
       // Revenus par jour pour graphique
       prisma.payment.findMany({
         where: {
-          datePaiement: { gte: startOfMonth, lte: endOfMonth }
+          datePaiement: { gte: startOfMonth, lte: endOfMonth },
+          deletedAt: null, isDemo: false
         },
         select: {
           datePaiement: true,
@@ -329,7 +351,8 @@ router.get('/rapport-annuel', verifyToken, readOnlyDirection, async (req, res) =
           const end = new Date(targetYear, i + 1, 0);
           return prisma.payment.aggregate({
             where: {
-              datePaiement: { gte: start, lte: end }
+              datePaiement: { gte: start, lte: end },
+              deletedAt: null, isDemo: false
             },
             _sum: { montantVerse: true }
           }).then(r => ({
@@ -344,7 +367,8 @@ router.get('/rapport-annuel', verifyToken, readOnlyDirection, async (req, res) =
         by: ['leaseId'],
         _sum: { montantVerse: true },
         where: {
-          datePaiement: { gte: startOfYear, lte: endOfYear }
+          datePaiement: { gte: startOfYear, lte: endOfYear },
+          deletedAt: null, isDemo: false
         },
         orderBy: { _sum: { montantVerse: 'desc' } },
         take: 5
@@ -366,10 +390,10 @@ router.get('/rapport-annuel', verifyToken, readOnlyDirection, async (req, res) =
 
       // Top 3 immeubles (par revenus)
       Promise.all([
-        prisma.building.findMany({ select: { id: true, nom: true } }),
-        prisma.lease.findMany({ select: { id: true, buildingId: true } }),
+        prisma.building.findMany({ where: { deletedAt: null, isDemo: false }, select: { id: true, nom: true } }),
+        prisma.lease.findMany({ where: { deletedAt: null, isDemo: false }, select: { id: true, buildingId: true } }),
         prisma.payment.findMany({
-          where: { datePaiement: { gte: startOfYear, lte: endOfYear } },
+          where: { datePaiement: { gte: startOfYear, lte: endOfYear }, deletedAt: null, isDemo: false },
           select: { leaseId: true, montantVerse: true }
         })
       ]).then(([buildings, leases, payments]) => {
@@ -389,11 +413,11 @@ router.get('/rapport-annuel', verifyToken, readOnlyDirection, async (req, res) =
       // Taux de recouvrement global
       Promise.all([
         prisma.lease.aggregate({
-          where: { statut: 'ACTIF' },
+          where: { statut: 'ACTIF', deletedAt: null, isDemo: false },
           _sum: { montantInitial: true }
         }),
         prisma.payment.aggregate({
-          where: { datePaiement: { gte: startOfYear, lte: endOfYear } },
+          where: { datePaiement: { gte: startOfYear, lte: endOfYear }, deletedAt: null, isDemo: false },
           _sum: { montantVerse: true }
         })
       ]).then(([attendu, recu]) => {
@@ -424,10 +448,11 @@ router.get('/etat-creances', verifyToken, readOnlyDirection, async (req, res) =>
 
     // Récupérer tous les clients avec solde > 0
     const leases = await prisma.lease.findMany({
-      where: { statut: 'ACTIF' },
+      where: { statut: 'ACTIF', deletedAt: null, isDemo: false },
       include: {
         client: true,
         payments: {
+          where: { deletedAt: null, isDemo: false },
           orderBy: { datePaiement: 'desc' }
         }
       }
@@ -502,7 +527,7 @@ router.get('/revenus', verifyToken, readOnlyDirection, async (req, res) => {
           DATE_TRUNC('month', "datePaiement") AS mois,
           SUM("montantVerse") AS montant
         FROM payments
-        WHERE "datePaiement" >= ${debut12mois}
+        WHERE "datePaiement" >= ${debut12mois} AND "deletedAt" IS NULL AND is_demo = false
         GROUP BY DATE_TRUNC('month', "datePaiement")
         ORDER BY mois ASC
       `;
@@ -544,9 +569,11 @@ router.get('/retards', verifyToken, readOnlyDirection, async (req, res) => {
     const leasesEnRetard = await prisma.lease.findMany({
       where: {
         statut: 'ACTIF',
+        deletedAt: null, isDemo: false,
         payments: {
           none: {
-            datePaiement: { gte: thirtyDaysAgo }
+            datePaiement: { gte: thirtyDaysAgo },
+            deletedAt: null, isDemo: false
           }
         }
       },
@@ -554,6 +581,7 @@ router.get('/retards', verifyToken, readOnlyDirection, async (req, res) => {
         client: { select: { nom: true, prenom: true, telephone: true } },
         building: { select: { nom: true, adresse: true } },
         payments: {
+          where: { deletedAt: null, isDemo: false },
           orderBy: { datePaiement: 'desc' },
           take: 1
         }
@@ -599,6 +627,7 @@ router.get('/activites', verifyToken, readOnlyDirection, async (req, res) => {
       ] = await Promise.all([
         prisma.payment.findMany({
           take: 5,
+          where: { deletedAt: null, isDemo: false },
           orderBy: { createdAt: 'desc' },
           include: {
             lease: {
@@ -611,6 +640,7 @@ router.get('/activites', verifyToken, readOnlyDirection, async (req, res) => {
         }),
         prisma.lease.findMany({
           take: 5,
+          where: { deletedAt: null, isDemo: false },
           orderBy: { createdAt: 'desc' },
           include: {
             client: { select: { nom: true, prenom: true } },
@@ -681,11 +711,11 @@ router.get('/kpi/live', verifyToken, (req, res) => {
 
       const [revenusMois, nbClients, nbLeases] = await Promise.all([
         prisma.payment.aggregate({
-          where: { datePaiement: { gte: startOfMonth } },
+          where: { datePaiement: { gte: startOfMonth }, deletedAt: null, isDemo: false },
           _sum: { montantVerse: true }
         }),
-        prisma.client.count(),
-        prisma.lease.count({ where: { statut: 'ACTIF' } })
+        prisma.client.count({ where: { deletedAt: null, isDemo: false } }),
+        prisma.lease.count({ where: { statut: 'ACTIF', deletedAt: null, isDemo: false } })
       ]);
 
       const kpi = {
@@ -717,11 +747,12 @@ router.get('/kpi/live', verifyToken, (req, res) => {
 router.get('/predictions/retards', verifyToken, readOnlyDirection, async (req, res) => {
   try {
     const leases = await prisma.lease.findMany({
-      where: { statut: 'ACTIF' },
+      where: { statut: 'ACTIF', deletedAt: null, isDemo: false },
       include: {
         client: { select: { id: true, nom: true, prenom: true, telephone: true } },
         building: { select: { nom: true } },
         payments: {
+          where: { deletedAt: null, isDemo: false },
           orderBy: { datePaiement: 'asc' },
           select: { datePaiement: true, montantVerse: true }
         }
@@ -825,12 +856,12 @@ router.get('/stats', verifyToken, readOnlyDirection, async (req, res) => {
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
       const startOfYear = new Date(today.getFullYear(), 0, 1);
       const [revenusMois, revenusAnnee, totalClients, totalBiens, bauxActifs, totalPaiements] = await Promise.all([
-        prisma.payment.aggregate({ where: { datePaiement: { gte: startOfMonth } }, _sum: { montantVerse: true } }),
-        prisma.payment.aggregate({ where: { datePaiement: { gte: startOfYear } }, _sum: { montantVerse: true } }),
-        prisma.client.count(),
-        prisma.unite.count(),
-        prisma.lease.count({ where: { statut: 'ACTIF' } }),
-        prisma.payment.aggregate({ _sum: { montantVerse: true } })
+        prisma.payment.aggregate({ where: { datePaiement: { gte: startOfMonth }, deletedAt: null, isDemo: false }, _sum: { montantVerse: true } }),
+        prisma.payment.aggregate({ where: { datePaiement: { gte: startOfYear }, deletedAt: null, isDemo: false }, _sum: { montantVerse: true } }),
+        prisma.client.count({ where: { deletedAt: null, isDemo: false } }),
+        prisma.unite.count({ where: { deletedAt: null, isDemo: false } }),
+        prisma.lease.count({ where: { statut: 'ACTIF', deletedAt: null, isDemo: false } }),
+        prisma.payment.aggregate({ where: { deletedAt: null, isDemo: false }, _sum: { montantVerse: true } })
       ]);
       return {
         revenusMois: revenusMois._sum.montantVerse || 0,

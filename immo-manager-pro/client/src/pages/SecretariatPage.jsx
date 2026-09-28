@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { Plus, Search, Edit2, Trash2, CheckCircle, Clock, X, User, Phone, Mail, Calendar, MessageSquare, Building, FileText, Bell, AlertTriangle, TrendingUp, Check, Download, Printer } from 'lucide-react'
-import { fetchVisites, fetchRelances, createVisite, updateVisite, deleteVisite, traiterRelance, fetchAlertesDashboard, marquerAlerteLue, traiterAlerte, fetchBuildings, fetchBiens, invalidateCacheFor } from '../utils/api'
+import { fetchVisites, fetchRelances, createVisite, updateVisite, deleteVisite, traiterRelance, fetchAlertesDashboard, fetchAlertes, marquerAlerteLue, traiterAlerte, fetchBuildings, fetchBiens, invalidateCacheFor } from '../utils/api'
 import { formatDate, formatDateTime, getMotifVisiteLabel, getMotifVisiteBadgeStyle, getStatutRelanceLabel, getStatutRelanceBadgeStyle, getTypeAlerteLabel, getTypeAlerteBadgeStyle } from '../utils/formatters'
 import toast from 'react-hot-toast'
 import jsPDF from 'jspdf'
@@ -18,6 +18,7 @@ const SecretariatPage = () => {
   const [visites, setVisites] = useState([])
   const [relances, setRelances] = useState([])
   const [alertesStats, setAlertesStats] = useState({ total: 0, nonLues: 0, alertes: [] })
+  const [alertesList, setAlertesList] = useState([])
   const [buildings, setBuildings] = useState([])
   const [biensLoading, setBiensLoading] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -150,9 +151,9 @@ const SecretariatPage = () => {
         const data = res.data?.data || res.data || []
         setRelances(Array.isArray(data) ? data : [])
       } else if (activeTab === 'alertes') {
-        const res = await fetchAlertesDashboard()
-        const data = res.data?.data || res.data || {}
-        setAlertesStats(data)
+        const res = await fetchAlertesDashboard(); const listRes = await fetchAlertes({ lues: false });
+        setAlertesStats(res.data?.data || res.data || {});
+        setAlertesList(listRes.data?.data || listRes.data || []);
       }
     } catch (error) {
       console.error('[SecretariatPage] Erreur chargement:', error)
@@ -285,8 +286,8 @@ const SecretariatPage = () => {
 
   const handleMarquerToutesAlertesLues = async () => {
     try {
-      const alertes = alertesStats.alertes || []
-      const nonLues = alertes.filter(a => !a.lue)
+      const alertes = alertesList || []
+      const nonLues = alertes.filter(a => !a.estLue)
       if (nonLues.length === 0) {
         toast('Aucune alerte non lue Ã  marquer')
         return
@@ -1007,8 +1008,7 @@ const SecretariatPage = () => {
         )}
 
         {activeTab === 'alertes' && (
-          <AlertesTab 
-            alertesStats={alertesStats}
+          <AlertesTab alertesStats={alertesStats} alertesList={alertesList}
             loading={loading}
             onRefresh={loadData}
             onMarquerToutesLues={handleMarquerToutesAlertesLues}
@@ -1762,7 +1762,7 @@ const RelancesTab = ({ relances, loading, onTraiter, onRefresh }) => {
 // ============================================
 // ONGLET 3: ALERTES AUTOMATIQUES
 // ============================================
-const AlertesTab = ({ alertesStats, loading, onRefresh, onMarquerToutesLues }) => {
+const AlertesTab = ({ alertesStats, alertesList = [], loading, onRefresh, onMarquerToutesLues }) => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-3">
@@ -1925,6 +1925,45 @@ const AlertesTab = ({ alertesStats, loading, onRefresh, onMarquerToutesLues }) =
             </div>
           )
         })}
+            </div>
+      
+      {/* Liste des alertes */}
+      <div className="mt-8 bg-white rounded-lg shadow overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900">Détails des alertes non lues</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Message</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {alertesList.length > 0 ? alertesList.map((alerte, i) => (
+                <tr key={i} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                      {alerte.type}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{alerte.message}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {alerte.createdAt ? new Date(alerte.createdAt).toLocaleDateString() : '-'}
+                  </td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan="3" className="px-6 py-8 text-center text-sm text-gray-500">
+                    Aucune alerte à afficher. Tout est à jour !
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Message informatif */}
@@ -2308,3 +2347,9 @@ const ConfirmModal = ({ title, message, icon, color, onConfirm, onCancel }) => {
 }
 
 export default SecretariatPage
+
+
+
+
+
+

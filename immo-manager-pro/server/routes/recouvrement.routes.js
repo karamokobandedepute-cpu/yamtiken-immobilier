@@ -21,7 +21,7 @@ router.get('/dashboard', verifyToken, isRecouvrement, async (req, res) => {
     // 1. Total encaissé ce mois
     const encaisseMois = await prisma.payment.aggregate({
       where: {
-        datePaiement: { gte: startOfMonth }
+        datePaiement: { gte: startOfMonth }, deletedAt: null, isDemo: false
       },
       _sum: { montantVerse: true }
     });
@@ -29,7 +29,7 @@ router.get('/dashboard', verifyToken, isRecouvrement, async (req, res) => {
     // 2. Total encaissé cette année
     const encaisseAnnee = await prisma.payment.aggregate({
       where: {
-        datePaiement: { gte: startOfYear }
+        datePaiement: { gte: startOfYear }, deletedAt: null, isDemo: false
       },
       _sum: { montantVerse: true }
     });
@@ -38,11 +38,9 @@ router.get('/dashboard', verifyToken, isRecouvrement, async (req, res) => {
     const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
     const dossiersRetard = await prisma.lease.count({
       where: {
-        statut: 'ACTIF',
-        dateEntree: { not: null },
-        payments: {
+        statut: 'ACTIF', deletedAt: null, isDemo: false, dateEntree: { not: null }, payments: {
           none: {
-            datePaiement: { gte: thirtyDaysAgo }
+            datePaiement: { gte: thirtyDaysAgo }, deletedAt: null, isDemo: false
           }
         }
       }
@@ -51,8 +49,7 @@ router.get('/dashboard', verifyToken, isRecouvrement, async (req, res) => {
     // 4. Taux de recouvrement mensuel
     const totalAttenduMois = await prisma.lease.aggregate({
       where: {
-        statut: 'ACTIF',
-        dateEntree: { not: null }
+        statut: 'ACTIF', deletedAt: null, isDemo: false, dateEntree: { not: null }
       },
       _sum: { montantInitial: true }
     });
@@ -88,8 +85,7 @@ router.get('/clients-retard', verifyToken, isRecouvrement, async (req, res) => {
     // Récupérer tous les baux actifs avec leurs paiements
     const leases = await prisma.lease.findMany({
       where: {
-        statut: 'ACTIF',
-        dateEntree: { not: null } // Ne recouvre que si les clés sont remises
+        statut: 'ACTIF', deletedAt: null, isDemo: false, dateEntree: { not: null } // Ne recouvre que si les clés sont remises
       },
       include: {
         client: true,
@@ -280,8 +276,7 @@ router.get('/droits-terre', verifyToken, isRecouvrement, async (req, res) => {
 
       const leases = await prisma.lease.findMany({
         where: { 
-          statut: 'ACTIF',
-          dateEntree: { not: null }
+          statut: 'ACTIF', deletedAt: null, isDemo: false, dateEntree: { not: null }
         },
         include: {
           client: { select: { id: true, prenom: true, nom: true, telephone: true } },
@@ -348,7 +343,7 @@ router.get('/statistiques-mensuelles', verifyToken, isRecouvrement, async (req, 
           EXTRACT(MONTH FROM "datePaiement") - 1 AS mois_idx,
           SUM("montantVerse") AS montant
         FROM payments
-        WHERE "datePaiement" >= ${startOfYear}
+        WHERE "datePaiement" >= ${startOfYear} AND "deletedAt" IS NULL AND is_demo = false
         GROUP BY EXTRACT(MONTH FROM "datePaiement")
       `;
 
@@ -358,7 +353,7 @@ router.get('/statistiques-mensuelles', verifyToken, isRecouvrement, async (req, 
       }
 
       const leases = await prisma.lease.findMany({
-        where: { statut: 'ACTIF', dateEntree: { not: null } },
+        where: { statut: 'ACTIF', deletedAt: null, isDemo: false, dateEntree: { not: null } },
         select: { montantInitial: true }
       });
       const montantMensuelAttendu = leases.reduce((sum, l) => sum + l.montantInitial, 0) / 12;
