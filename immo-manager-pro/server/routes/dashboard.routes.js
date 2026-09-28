@@ -72,7 +72,7 @@ router.get('/kpi', verifyToken, readOnlyDirection, async (req, res) => {
             _sum: { montant: true }
           }).catch(() => ({ _sum: { montant: 0 } }));
           const depenses = await prisma.depense.aggregate({
-            where: { deletedAt: null, isDemo: false },
+            where: { deletedAt: null },
             _sum: { montant: true }
           }).catch(() => ({ _sum: { montant: 0 } }));
           return (encaissements._sum.montantVerse || 0) - (commissionsPayees._sum.montant || 0) - (depenses._sum.montant || 0);
@@ -284,7 +284,7 @@ router.get('/rapport-mensuel', verifyToken, readOnlyDirection, async (req, res) 
         const depenses = await prisma.depense.aggregate({
           where: {
             date: { lte: endOfMonth },
-            deletedAt: null, isDemo: false
+            deletedAt: null
           },
           _sum: { montant: true }
         }).catch(() => ({ _sum: { montant: 0 } }));

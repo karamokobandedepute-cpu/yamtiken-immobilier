@@ -218,9 +218,12 @@ export const createClient = async (req, res) => {
       } catch (e) { /* ignore */ }
     }
     
+    // Générer un mot de passe par défaut (PIN 4 chiffres) pour le Portail
+    const extranetPin = Math.floor(1000 + Math.random() * 9000).toString();
+
     const result = await prisma.$queryRawUnsafe(
-      `INSERT INTO public.clients (type, nom, prenom, nationalite, "dateNaissance", telephone, telephone2, email, adresse, profession, "numeroPiece", "photoUrl", "pieceUrl", is_demo, actif, "createdAt", "updatedAt")
-       VALUES ($1::"TypeClient", $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, false, true, NOW(), NOW())
+      `INSERT INTO public.clients (type, nom, prenom, nationalite, "dateNaissance", telephone, telephone2, email, adresse, profession, "numeroPiece", "photoUrl", "pieceUrl", is_demo, actif, "createdAt", "updatedAt", password)
+       VALUES ($1::"TypeClient", $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, false, true, NOW(), NOW(), $14)
        RETURNING *`,
       type || 'CLIENT',
       nom || 'Non renseigne',
@@ -234,7 +237,8 @@ export const createClient = async (req, res) => {
       profession || null,
       numeroPiece || null,
       photoUrl,
-      pieceUrl
+      pieceUrl,
+      extranetPin
     );
     
     const newClient = result[0];

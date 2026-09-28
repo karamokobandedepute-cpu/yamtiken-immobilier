@@ -148,6 +148,17 @@ const ClientsPage = () => {
     }
   }
 
+  const handleAIScoring = async (clientId) => {
+    const toastId = toast.loading('Analyse IA en cours...')
+    try {
+      const response = await api.get(`/ia/scoring/${clientId}`)
+      toast.success(`Analyse terminée ! Risque: ${response.data.niveauRisque}`, { id: toastId })
+      loadClients()
+    } catch (error) {
+      toast.error("Erreur lors de l'analyse IA", { id: toastId })
+    }
+  }
+
   const handleExportPDF = async (clientData) => {
     const toastId = toast.loading('Génération PDF...');
     try {
@@ -433,6 +444,11 @@ const ClientsPage = () => {
                         <Phone size={11} />{formatPhone(client.telephone)}
                       </span>
                       {client.email && <span className="text-xs truncate" style={{ color: '#6B7280' }}>{client.email}</span>}
+                      {client.scoreRisque != null && (
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: client.niveauRisque === 'ELEVÉ' ? '#FEE2E2' : client.niveauRisque === 'FAIBLE' ? '#DCFCE7' : '#FEF3C7', color: client.niveauRisque === 'ELEVÉ' ? '#DC2626' : client.niveauRisque === 'FAIBLE' ? '#166534' : '#92400E' }}>
+                          IA Risque: {client.niveauRisque} ({client.scoreRisque}%)
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -450,6 +466,7 @@ const ClientsPage = () => {
 
                   {/* Actions */}
                   <div className="shrink-0 flex items-center gap-1.5">
+                    <button onClick={() => handleAIScoring(client.id)} className="p-2 rounded-lg transition-colors" style={{ background: '#F3E8FF', color: '#9333EA' }} title="Analyse IA (Score de Risque)"><TrendingUp size={15} /></button>
                     <button onClick={() => openClientModal(client)} className="p-2 rounded-lg transition-colors" style={{ background: '#DCFCE7', color: '#166534' }} title="Modifier"><Edit2 size={15} /></button>
                     <button onClick={() => openDetailModal(client)} className="p-2 rounded-lg transition-colors" style={{ background: '#DBEAFE', color: '#1D4ED8' }} title="Fiche détail"><Eye size={15} /></button>
                     <button onClick={() => handleDelete(client.id)} className="p-2 rounded-lg transition-colors" style={{ background: '#FEE2E2', color: '#DC2626' }} title="Supprimer"><Trash2 size={15} /></button>
@@ -869,8 +886,33 @@ const ClientModal = ({ client, referrers, onClose, onSuccess }) => {
       } else {
         console.log('📝 [ClientModal] Création nouveau client')
         const response = await createClient(data)
-        console.log('✅ [ClientModal] Client créé avec succès:', response)
-        toast.success('✅ Client créé et assigné au patrimoine avec succès')
+        const newClient = response.data || response; // According to axios structure
+        console.log('✅ [ClientModal] Client créé avec succès:', newClient)
+        
+        if (newClient?.password) {
+          const welcomeMessage = `Bienvenue sur le portail locataire YAMTIKEN ! Votre identifiant: ${formData.telephone}. Mot de passe temporaire: ${newClient.password}. Lien: yamtiken.com/locataire`
+          toast((t) => (
+            <div className="flex flex-col gap-2 p-1">
+              <span className="font-bold text-green-700">✅ Client créé ! Accès Extranet généré.</span>
+              <p className="text-sm text-gray-600">Envoyez ses identifiants via WhatsApp :</p>
+              <div className="bg-green-50 p-2 rounded text-xs select-all border border-green-200 text-gray-800 break-words">
+                {welcomeMessage}
+              </div>
+              <button 
+                onClick={(e) => {
+                   e.preventDefault();
+                   navigator.clipboard.writeText(welcomeMessage);
+                   toast.dismiss(t.id);
+                   toast.success("Message copié !");
+                }} 
+                className="mt-1 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-xs transition-colors font-medium">
+                Copier pour WhatsApp
+              </button>
+            </div>
+          ), { duration: 15000 });
+        } else {
+          toast.success('✅ Client créé et assigné au patrimoine avec succès')
+        }
       }
       
       console.log('📝 [ClientModal] Appel onSuccess et fermeture')

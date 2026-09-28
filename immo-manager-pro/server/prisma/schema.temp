@@ -1,0 +1,26 @@
+
+enum StatutTicket {
+  NOUVEAU
+  EN_COURS
+  RESOLU
+  FERME
+}
+
+model TicketMaintenance {
+  id          Int       @id @default(autoincrement())
+  titre       String
+  description String    @db.Text
+  statut      StatutTicket @default(NOUVEAU)
+  urgence     String    @default("NORMALE")
+  
+  clientId    Int
+  client      Client    @relation(fields: [clientId], references: [id])
+  
+  bienId      Int?
+  bien        Bien?     @relation(fields: [bienId], references: [id])
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@map("tickets_maintenance")
+}

@@ -34,6 +34,8 @@ import adminRoutes from './routes/admin.routes.js';
 import exportRoutes from './routes/export.routes.js';
 import auditRoutes from './routes/audit.routes.js';
 import caisseRoutes from './routes/caisse.routes.js';
+import extranetRoutes from './routes/extranet.routes.js';
+import iaRoutes from './routes/ia.routes.js';
 import cronService from './services/cron.service.js';
 import { initSocket } from './lib/socket.js';
 import prisma from './lib/prisma.js';
@@ -221,6 +223,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/export', exportRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/caisse', caisseRoutes);
+app.use('/api/extranet', extranetRoutes);
+app.use('/api/ia', iaRoutes);
 
 // ============================================
 // PRODUCTION : Servir le frontend React build
