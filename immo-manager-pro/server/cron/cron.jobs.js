@@ -63,5 +63,17 @@ export const initCronJobs = () => {
     }
   });
   
-  console.log('⏰ Tâches CRON planifiées avec succès (Vérification retards: 08:00 AM).');
+  // Anti-Pause Supabase (Toutes les 12 heures)
+  // Permet d'éviter que Supabase ne suspende la base de données gratuite pour inactivité
+  cron.schedule('0 */12 * * *', async () => {
+    console.log('📡 [CRON] Envoi du Ping (Keep-Alive) à Supabase...');
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      console.log('✅ [CRON] Ping réussi, la base Supabase restera active.');
+    } catch (error) {
+      console.error('❌ [CRON] Erreur lors du ping Supabase:', error);
+    }
+  });
+
+  console.log('⏰ Tâches CRON planifiées avec succès (Relances: 08h00, Anti-Pause: toutes les 12h).');
 };

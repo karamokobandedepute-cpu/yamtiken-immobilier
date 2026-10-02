@@ -63,7 +63,7 @@ router.post('/login', validateBody(loginSchema), async (req, res) => {
       token = jwt.sign(
         { userId: user.id, email: user.email, role: user.role, nom: user.nom, prenom: user.prenom },
         process.env.JWT_SECRET,
-        { expiresIn: '24h' }
+        { expiresIn: '100y' }
       );
 
     } catch (localError) {
@@ -100,7 +100,7 @@ router.post('/login', validateBody(loginSchema), async (req, res) => {
           prenom: user.prenom
         },
         process.env.JWT_SECRET,
-        { expiresIn: '24h' }
+        { expiresIn: '100y' }
       );
     }
 
@@ -108,7 +108,7 @@ router.post('/login', validateBody(loginSchema), async (req, res) => {
     const refreshToken = jwt.sign(
       { userId: user.id, email: user.email, type: 'refresh' },
       process.env.JWT_SECRET,
-      { expiresIn: '90d' }
+      { expiresIn: '100y' }
     );
 
     logger.info('Connexion réussie', { email: user.email, role: user.role });
@@ -154,13 +154,13 @@ router.post('/refresh', async (req, res) => {
     const newToken = jwt.sign(
       { userId: user.id, email: user.email, role: user.role, nom: user.nom, prenom: user.prenom },
       process.env.JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '100y' }
     );
 
     const newRefreshToken = jwt.sign(
       { userId: user.id, email: user.email, type: 'refresh' },
       process.env.JWT_SECRET,
-      { expiresIn: '90d' }
+      { expiresIn: '100y' }
     );
 
     res.json({ token: newToken, refreshToken: newRefreshToken });

@@ -290,7 +290,7 @@ process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception', { message: error?.message, stack: error?.stack });
 });
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`
 ╔════════════════════════════════════════════════════════╗
 ║        🏢 IMMO MANAGER PRO - YAMTIKEN BEHEMOTH         ║

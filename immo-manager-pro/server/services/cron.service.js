@@ -1,5 +1,6 @@
 import prisma from '../lib/prisma.js';
 import cron from 'node-cron';
+import { runDailyBackup } from './backup.service.js';
 import nodemailer from 'nodemailer';
 import notificationService from './notification.service.js';
 
@@ -25,6 +26,12 @@ class CronService {
     console.log('🕐 Démarrage du service CRON...');
     
     // Tâche 1: Générer les alertes automatiques tous les jours à 6h du matin
+    const backupTask = cron.schedule('0 3 * * *', async () => {
+      console.log('💾 Sauvegarde automatique de la base de données...');
+      await runDailyBackup();
+    });
+    backupTask.start();
+
     const alertTask = cron.schedule('0 6 * * *', async () => {
       console.log('📢 Génération des alertes automatiques...');
       await this.generateAlertesAutomatiques();
@@ -51,7 +58,18 @@ class CronService {
       timezone: 'Africa/Abidjan'
     });
 
-    this.tasks.push(alertTask, emailTask, retardTask);
+    // Tâche 4: Ping Anti-Pause Supabase (Toutes les 12 heures)
+    const keepAliveTask = cron.schedule('0 */12 * * *', async () => {
+      console.log('📡 [CRON] Envoi du Ping (Keep-Alive) à Supabase...');
+      try {
+        await prisma.$queryRaw`SELECT 1`;
+        console.log('✅ [CRON] Ping réussi, la base Supabase restera active.');
+      } catch (error) {
+        console.error('❌ [CRON] Erreur lors du ping Supabase:', error);
+      }
+    });
+
+    this.tasks.push(alertTask, emailTask, retardTask, keepAliveTask);
     console.log('✅ Service CRON démarré avec succès');
   }
 

@@ -6,14 +6,21 @@ export default defineConfig(({ command }) => ({
   plugins: [react()],
   base: command === 'serve' ? '/' : './',
   server: {
-    host: '0.0.0.0',
+    host: true, // Écoute sur IPv4 et IPv6 (0.0.0.0 et ::)
+    port: 5173,
+    strictPort: true,
     allowedHosts: true,
+    hmr: {
+      protocol: 'ws',
+      host: 'localhost',
+      port: 5173
+    },
     headers: {
       'Cache-Control': 'no-store'
     },
     proxy: {
       '/api': {
-        target: process.env.VITE_BACKEND_INTERNAL_URL || 'http://localhost:5000',
+        target: process.env.VITE_BACKEND_INTERNAL_URL || 'http://127.0.0.1:5000',
         changeOrigin: true
       }
     }

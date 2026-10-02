@@ -113,6 +113,20 @@ export const createPaiement = async (req, res) => {
   try {
     const data = req.body;
     data.creeParId = req.user.id;
+    // ANTI-DOUBLE CLIC: Vérifier s'il y a un paiement identique il y a moins de 5 secondes
+    const recentPaiement = await prisma.paiement.findFirst({
+      where: {
+        contratId: data.contratId,
+        montant: data.montant,
+        createdAt: {
+          gte: new Date(Date.now() - 5000)
+        }
+      }
+    });
+    if (recentPaiement) {
+      return res.status(429).json({ message: 'Paiement déjà enregistré. Veuillez patienter.' });
+    }
+
 
     // GÃ©nÃ©rer rÃ©fÃ©rence
     const count = await prisma.paiement.count();
@@ -297,3 +311,4 @@ export const getPaiementsAVenir = async (req, res) => {
     res.status(500).json({ message: 'Erreur lors de la rÃ©cupÃ©ration des paiements Ã  venir', error: error.message });
   }
 };
+
