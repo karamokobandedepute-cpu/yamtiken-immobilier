@@ -31,10 +31,16 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=5002
-      - DATABASE_URL=${DATABASE_URL}
-      - JWT_SECRET=${JWT_SECRET}
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres.envdbpthrufwjvejbnal:77916407@@Mu@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=15&pool_timeout=30&sslmode=require&connect_timeout=30}
+      - DIRECT_URL=${DIRECT_URL:-postgresql://postgres:77916407@@Mu@db.envdbpthrufwjvejbnal.supabase.co:5432/postgres?sslmode=require}
+      - SUPABASE_URL=${SUPABASE_URL:-https://envdbpthrufwjvejbnal.supabase.co}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudmRicHRocnVmd2p2ZWpibmFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzA0NDEsImV4cCI6MjEwNjUwNjQ0MX0.gUpb1Ixvuwa0ao1HVHNgtxFLKv74uhLmfvtZj5i4sdA}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudmRicHRocnVmd2p2ZWpibmFsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MDkzMDQ0MSwiZXhwIjoyMTA2NTA2NDQxfQ.1TvtjdDHLnWpIX5RGdeEPR-e8tG6YhMFDeTY-qzRN20}
+      - JWT_SECRET=${JWT_SECRET:-yamtiken_behemoth_jwt_2026_secure_random_key_987654321abcdef}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-24h}
+      - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL:-munokolive@gmail.com}
+      - ALERT_EMAIL=${ALERT_EMAIL:-munokolive@gmail.com}
+      - ALERT_REFRESH_INTERVAL=${ALERT_REFRESH_INTERVAL:-5}
     
     # 💾 LIMITES MÉMOIRE
     deploy:
@@ -89,9 +95,9 @@ services:
     # 🌍 ENVIRONNEMENT
     environment:
       - NODE_ENV=development
-      - VITE_API_URL=http://localhost:5002/api
-      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
-      - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:5002/api}
+      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL:-https://envdbpthrufwjvejbnal.supabase.co}
+      - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudmRicHRocnVmd2p2ZWpibmFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzA0NDEsImV4cCI6MjEwNjUwNjQ0MX0.gUpb1Ixvuwa0ao1HVHNgtxFLKv74uhLmfvtZj5i4sdA}
     
     # 💾 LIMITES MÉMOIRE
     deploy:

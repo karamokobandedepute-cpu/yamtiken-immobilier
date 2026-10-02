@@ -1,4 +1,4 @@
-                                                     # ============================================================
+﻿                                                     # ============================================================
 # DOCKER COMPOSE - INFRASTRUCTURE INCREVABLE
 # Backend + Frontend avec restart always et health checks
 # ============================================================
@@ -18,7 +18,7 @@ services:
     expose:
       - "5002"
       
-    # 🏷️ LABELS TRAEFIK
+    # ðŸ·ï¸ LABELS TRAEFIK
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=coolify"
@@ -30,26 +30,30 @@ services:
       - "traefik.http.routers.backend-https.tls.certresolver=letsencrypt"
       - "traefik.http.services.backend.loadbalancer.server.port=5002"
       
-    # 🔄 INCASSABLE - Toujours redémarrer
+    # ðŸ”„ INCASSABLE - Toujours redÃ©marrer
     restart: always
     
-    # 📁 VOLUMES - Logs uniquement en production
+    # ðŸ“ VOLUMES - Logs uniquement en production
     volumes:
       - backend_logs:/app/logs
     
-    # 🌍 ENVIRONNEMENT
+    # ðŸŒ ENVIRONNEMENT
     environment:
       - NODE_ENV=production
       - PORT=5002
-      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:77916407@@Mu@db.envdbpthrufwjvejbnal.supabase.co:5432/postgres?sslmode=require}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres.envdbpthrufwjvejbnal:77916407@@Mu@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=15&pool_timeout=30&sslmode=require&connect_timeout=30}
       - DIRECT_URL=${DIRECT_URL:-postgresql://postgres:77916407@@Mu@db.envdbpthrufwjvejbnal.supabase.co:5432/postgres?sslmode=require}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-100y}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-24h}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudmRicHRocnVmd2p2ZWpibmFsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MDkzMDQ0MSwiZXhwIjoyMTA2NTA2NDQxfQ.1TvtjdDHLnWpIX5RGdeEPR-e8tG6YhMFDeTY-qzRN20}
+      - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL:-munokolive@gmail.com}
+      - ALERT_EMAIL=${ALERT_EMAIL:-munokolive@gmail.com}
+      - ALERT_REFRESH_INTERVAL=${ALERT_REFRESH_INTERVAL:-5}
       - JWT_SECRET=${JWT_SECRET:-yamtiken_behemoth_jwt_2026_secure_random_key_987654321abcdef}
       - SUPABASE_URL=${SUPABASE_URL:-https://envdbpthrufwjvejbnal.supabase.co}
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudmRicHRocnVmd2p2ZWpibmFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzA0NDEsImV4cCI6MjEwNjUwNjQ0MX0.gUpb1Ixvuwa0ao1HVHNgtxFLKv74uhLmfvtZj5i4sdA}
       - CLIENT_URL=${CLIENT_URL:-http://localhost:5177}
     
-    # 💾 LIMITES MÉMOIRE
+    # ðŸ’¾ LIMITES MÃ‰MOIRE
     deploy:
       resources:
         limits:
@@ -58,7 +62,7 @@ services:
         reservations:
           memory: 128M
     
-    # 🏥 HEALTH CHECK - Vérifie si le service répond
+    # ðŸ¥ HEALTH CHECK - VÃ©rifie si le service rÃ©pond
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:5002/api/health || exit 1"]
       interval: 20s
@@ -66,12 +70,12 @@ services:
       retries: 5
       start_period: 30s
     
-    # 🌐 RÉSEAU
+    # ðŸŒ RÃ‰SEAU
     networks:
       - default
       - coolify
     
-    # 📝 LOGS
+    # ðŸ“ LOGS
     logging:
       driver: "json-file"
       options:
@@ -93,7 +97,7 @@ services:
     ports:
       - "80"
       
-    # 🏷️ LABELS TRAEFIK
+    # ðŸ·ï¸ LABELS TRAEFIK
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=coolify"
@@ -101,21 +105,21 @@ services:
       - "traefik.http.routers.frontend.entrypoints=http,https"
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
       
-    # 🔄 INCASSABLE
+    # ðŸ”„ INCASSABLE
     restart: always
     
-    # 📁 VOLUMES - Logs uniquement
+    # ðŸ“ VOLUMES - Logs uniquement
     volumes:
       - frontend_logs:/app/logs
     
-    # 🌍 ENVIRONNEMENT
+    # ðŸŒ ENVIRONNEMENT
     environment:
       - NODE_ENV=production
       - VITE_API_URL=${VITE_API_URL:-/api}
       - VITE_SUPABASE_URL=${VITE_SUPABASE_URL:-https://envdbpthrufwjvejbnal.supabase.co}
       - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudmRicHRocnVmd2p2ZWpibmFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzA0NDEsImV4cCI6MjEwNjUwNjQ0MX0.gUpb1Ixvuwa0ao1HVHNgtxFLKv74uhLmfvtZj5i4sdA}
     
-    # 💾 LIMITES MÉMOIRE
+    # ðŸ’¾ LIMITES MÃ‰MOIRE
     deploy:
       resources:
         limits:
@@ -124,7 +128,7 @@ services:
         reservations:
           memory: 128M
     
-    # 🏥 HEALTH CHECK
+    # ðŸ¥ HEALTH CHECK
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:80"]
       interval: 20s
@@ -132,16 +136,16 @@ services:
       retries: 5
       start_period: 30s
     
-    # ⏳ DÉPENDANCES (Démarrage non-bloquant)
+    # â³ DÃ‰PENDANCES (DÃ©marrage non-bloquant)
     depends_on:
       backend:
         condition: service_started
     
-    # 🌐 RÉSEAU
+    # ðŸŒ RÃ‰SEAU
     networks:
       - coolify
     
-    # 📝 LOGS
+    # ðŸ“ LOGS
     logging:
       driver: "json-file"
       options:
@@ -149,7 +153,7 @@ services:
         max-file: "3"
 
 # ============================================================
-# RÉSEAU INTERNE & EXTERNE (COOLIFY)
+# RÃ‰SEAU INTERNE & EXTERNE (COOLIFY)
 # ============================================================
 networks:
   coolify:
@@ -162,3 +166,4 @@ networks:
 volumes:
   backend_logs:
   frontend_logs:
+
