@@ -26,7 +26,10 @@ const transporter = nodemailer.createTransport({
 // Connexion locale — bcrypt + JWT (sans confirmation email)
 router.post('/login', validateBody(loginSchema), async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email: rawEmail, password: rawPassword } = req.body;
+    
+    const email = rawEmail?.trim();
+    const password = rawPassword?.trim();
 
     logger.info('[LOGIN] Tentative de connexion', { email });
 
@@ -173,7 +176,8 @@ router.post('/refresh', async (req, res) => {
 // Mot de passe oublié — génère un token JWT + envoie email
 router.post('/forgot-password', async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email: rawEmail } = req.body;
+    const email = rawEmail?.trim();
     if (!email) return res.status(400).json({ message: 'Email requis' });
 
     const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });

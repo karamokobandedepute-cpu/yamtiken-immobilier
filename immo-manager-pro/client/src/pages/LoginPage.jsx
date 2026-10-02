@@ -70,12 +70,15 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    if (!email || !password) {
+    const trimmedEmail = email?.trim()
+    const trimmedPassword = password?.trim()
+
+    if (!trimmedEmail || !trimmedPassword) {
       toast.error('Veuillez remplir tous les champs')
       return
     }
 
-    const result = await login(email, password)
+    const result = await login(trimmedEmail, trimmedPassword)
     
     if (result.success) {
       // 💾 Sauvegarder credentials si Remember Me
