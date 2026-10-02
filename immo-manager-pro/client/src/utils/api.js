@@ -43,8 +43,8 @@ const isProduction = import.meta.env.PROD || import.meta.env.NODE_ENV === 'produ
 const isElectron = typeof window !== 'undefined' && window.location.protocol === 'app:';
 const API_URL = import.meta.env.VITE_API_URL || (
   import.meta.env.PROD 
-    ? (isElectron ? 'http://localhost:5002/api' : '/api')
-    : 'http://localhost:5002/api'
+    ? (isElectron ? 'http://localhost:5000/api' : '/api')
+    : 'http://localhost:5000/api'
 );
 
 if (!isProduction) console.debug(`[API] Base URL: ${API_URL}`)

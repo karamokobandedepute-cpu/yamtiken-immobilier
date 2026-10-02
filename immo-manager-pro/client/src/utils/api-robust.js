@@ -9,8 +9,8 @@ import toast from 'react-hot-toast';
 const isElectron = typeof window !== 'undefined' && window.location.protocol === 'app:';
 const API_URL = import.meta.env.VITE_API_URL || (
   import.meta.env.PROD 
-    ? (isElectron ? 'http://localhost:5002/api' : '/api')
-    : 'http://localhost:5002/api'
+    ? (isElectron ? 'http://localhost:5000/api' : '/api')
+    : 'http://localhost:5000/api'
 );
 
 // Créer une instance axios avec configuration par défaut
