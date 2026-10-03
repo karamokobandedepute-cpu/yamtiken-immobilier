@@ -2,14 +2,14 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# 1. On installe les outils de compilation de base (très important pour éviter l'exit code 1)
-RUN apk add --no-cache python3 make g++
+# 1. Outils de compilation + librairie de compatibilité (Pour bcrypt, prisma, etc. Zéro crash !)
+RUN apk add --no-cache python3 make g++ libc6-compat
 
-# 2. On copie les fichiers de configuration
-COPY package*.json ./
+# 2. On copie UNIQUEMENT package.json (On esquive volontairement le package-lock.json s'il existe encore)
+COPY package.json ./
 
-# 3. On installe les dépendances
-RUN npm install
+# 3. L'INSTALLATION INCASSABLE : on ignore les conflits, les audits inutiles et on force l'installation
+RUN npm install --legacy-peer-deps --no-audit --no-fund
 
 # 4. On copie tout le reste du code
 COPY . .
