@@ -19,10 +19,10 @@ export const useAuthStore = create(
       refreshToken: null,
       isAuthenticated: false,
       isLoading: false,
-      error: null,
+      error: null, pendingVerification: null,
 
       login: async (email, password) => {
-        set({ isLoading: true, error: null })
+        set({ isLoading: true, error: null, pendingVerification: null })
         try {
           const response = await axios.post(`${API_URL}/auth/login`, {
             email,
@@ -47,6 +47,10 @@ export const useAuthStore = create(
 
           return { success: true, user }
         } catch (error) {
+          if (error.response?.data?.error === 'UNVERIFIED') {
+            set({ isLoading: false, error: null, pendingVerification: null, pendingVerification: { userId: error.response.data.userId, email: error.response.data.email } })
+            return { success: false, unverified: true, userId: error.response.data.userId, email: error.response.data.email }
+          }
           const message = error.response?.data?.message
             || (error.code === 'ECONNABORTED' ? 'Timeout — serveur trop lent' : null)
             || (error.message?.includes('Network Error') ? 'Network Error' : null)
@@ -57,6 +61,7 @@ export const useAuthStore = create(
         }
       },
 
+      clearPendingVerification: () => set({ pendingVerification: null }),
       logout: (keepCredentials = true) => {
         const currentUser = get().user
         
@@ -95,7 +100,7 @@ export const useAuthStore = create(
           refreshToken: null,
           isAuthenticated: false,
           isLoading: false,
-          error: null
+          error: null, pendingVerification: null
         })
       },
 
@@ -238,3 +243,5 @@ export const useAuthStore = create(
     }
   )
 )
+
+

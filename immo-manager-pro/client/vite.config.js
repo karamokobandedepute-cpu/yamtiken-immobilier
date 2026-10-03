@@ -1,9 +1,13 @@
 
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import fs from 'fs'
+
+const envPath = fs.existsSync('.env') ? './' : '../';
 
 export default defineConfig(({ command }) => ({
   plugins: [react()],
+  envDir: envPath,
   base: command === 'serve' ? '/' : './',
   server: {
     host: true, // Écoute sur IPv4 et IPv6 (0.0.0.0 et ::)

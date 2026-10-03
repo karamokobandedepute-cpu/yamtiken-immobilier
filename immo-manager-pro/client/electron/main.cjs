@@ -11,9 +11,9 @@ const loadURL = serve({ directory: path.join(__dirname, '../dist') })
 const _env = [
   'PORT=5000',
   'NODE_ENV=production',
-  'DATABASE_URL=postgresql://postgres.ualdtjicekzyoobagfmf:77916407%40%40Mu@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require',
-  'DIRECT_URL=postgresql://postgres.ualdtjicekzyoobagfmf:77916407%40%40Mu@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require',
-  'SUPABASE_URL=https://ualdtjicekzyoobagfmf.supabase.co',
+  'DATABASE_URL=postgresql://postgres.envdbpthrufwjvejbnal:77916407%40%40Mu@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require',
+  'DIRECT_URL=postgresql://postgres.envdbpthrufwjvejbnal:77916407%40%40Mu@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require',
+  'SUPABASE_URL=https://envdbpthrufwjvejbnal.supabase.co',
   'SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVhbGR0amljZWt6eW9vYmFnZm1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0OTU0NjAsImV4cCI6MjA5MzA3MTQ2MH0.db36vGw76szLp_wL8vUBn0-gVnJLV0k9zFnDKTj_DQc',
   'SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVhbGR0amljZWt6eW9vYmFnZm1mIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzQ5NTQ2MCwiZXhwIjoyMDkzMDcxNDYwfQ.qtKwTIuWeqbCGKcLUdCfdU6QhnQVspqeoXDHSMb9TBA',
   'JWT_SECRET=yamtiken_behemoth_jwt_2026_secure_random_key_987654321abcdef',

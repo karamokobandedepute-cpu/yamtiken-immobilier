@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { User, Lock, Eye, EyeOff, Save, ShieldCheck } from 'lucide-react'
+import AvatarUpload from '../components/AvatarUpload'
 import { useAuthStore } from '../stores/authStore'
 import { changePassword } from '../utils/api'
 import { getRoleLabel } from '../utils/formatters'
@@ -53,12 +54,7 @@ const ProfilPage = () => {
       <div className="rounded-2xl overflow-hidden shadow-sm border" style={{ borderColor: '#E5E7EB' }}>
         <div className="h-2" style={{ background: 'linear-gradient(90deg, #0D3B1F, #1A6B35)' }} />
         <div className="p-6 flex items-center gap-5" style={{ background: 'white' }}>
-          <div
-            className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold text-white flex-shrink-0"
-            style={{ background: '#1A6B35' }}
-          >
-            {user?.prenom?.[0]}{user?.nom?.[0]}
-          </div>
+          <AvatarUpload entityId={user?.id} entityType="user" currentPhotoUrl={user?.photoUrl} />
           <div>
             <h2 className="text-xl font-bold" style={{ color: '#0D3B1F' }}>
               {user?.prenom} {user?.nom}
@@ -217,3 +213,4 @@ const ProfilPage = () => {
 }
 
 export default ProfilPage
+

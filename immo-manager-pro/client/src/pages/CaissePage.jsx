@@ -219,7 +219,17 @@ export default function CaissePage() {
               <Clock size={18} className="text-gray-500" />
               Dernières dépenses
             </h2>
-            <button onClick={() => setActiveTab('depenses')} className="text-sm text-green-600 font-medium hover:underline">
+            
+          <button
+            onClick={() => setActiveTab('rentabilite')}
+            className={`px-4 py-3 font-medium text-sm transition-colors relative ${activeTab === 'rentabilite' ? 'text-green-700' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            Rentabilité (ROI)
+            {activeTab === 'rentabilite' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-600 rounded-t-md" />}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('depenses')} className="text-sm text-green-600 font-medium hover:underline">
               Voir tout
             </button>
           </div>

@@ -35,14 +35,16 @@ import exportRoutes from './routes/export.routes.js';
 import auditRoutes from './routes/audit.routes.js';
 import caisseRoutes from './routes/caisse.routes.js';
 import extranetRoutes from './routes/extranet.routes.js';
+import etatLieuxRoutes from './routes/etatLieux.routes.js';
 import iaRoutes from './routes/ia.routes.js';
+import uploadRoutes from './routes/upload.routes.js';
 import cronService from './services/cron.service.js';
 import { initSocket } from './lib/socket.js';
 import prisma from './lib/prisma.js';
 import { apiLimiter, loginLimiter, strictLimiter } from './middlewares/rateLimiter.js';
 // import { auditMiddleware } from './middlewares/audit.middleware.js'; // Middleware audit global
 
-dotenv.config();
+dotenv.config({ path: '../.env' });
 
 // Vérification des variables critiques au démarrage
 if (!process.env.JWT_SECRET) {
@@ -224,7 +226,9 @@ app.use('/api/export', exportRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/caisse', caisseRoutes);
 app.use('/api/extranet', extranetRoutes);
+app.use('/api/etats-lieux', etatLieuxRoutes);
 app.use('/api/ia', iaRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // ============================================
 // PRODUCTION : Servir le frontend React build
@@ -329,3 +333,4 @@ const gracefulShutdown = (signal) => {
 
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+

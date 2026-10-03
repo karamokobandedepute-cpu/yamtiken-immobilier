@@ -14,6 +14,7 @@ import { prefetchAllData } from './utils/api'
 
 // ⚡ CHARGEMENT DIRECT - Toutes les pages chargent au démarrage, navigation instantanée
 import LoginPage from './pages/LoginPage'
+import VerifyOtpPage from './pages/VerifyOtpPage'
 import DashboardPage from './pages/DashboardPage'
 import ClientsPage from './pages/ClientsPage'
 import BiensPage from './pages/BiensPage'
@@ -30,6 +31,7 @@ import LeasesPage from './pages/LeasesPage'
 import ProfilPage from './pages/ProfilPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import CaissePage from './pages/CaissePage'
+import ExtranetPortal from './pages/extranet/ExtranetPortal'
 
 function AppInner() {
   const { isAuthenticated, checkAndRefreshToken, validateTokenOnline } = useAuthStore()
@@ -92,9 +94,8 @@ function App() {
         
         <Routes>
           {/* Routes publiques - protégées par PublicRoute (redirige si déjà authentifié) */}
-          <Route 
-            path="/login" 
-            element={
+          <Route path="/extranet" element={<ExtranetPortal />} />
+          <Route path="/login" element={
               <PublicRoute>
                 <LoginPage />
               </PublicRoute>
@@ -154,3 +155,4 @@ function App() {
 }
 
 export default App
+

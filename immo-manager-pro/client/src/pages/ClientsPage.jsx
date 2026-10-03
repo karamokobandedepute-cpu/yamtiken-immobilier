@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { Plus, Search, Edit2, Trash2, Eye, Users, X, Phone, Mail, MapPin, FileDown, User, Calendar, Flag, Briefcase, CreditCard, TableProperties, FileText, Building2, Info, ChevronDown, ChevronRight, Printer, TrendingUp } from 'lucide-react'
+import AvatarUpload from '../components/AvatarUpload'
 import { fetchClients, deleteClient, createClient, updateClient, generateClientPDF, fetchReferrers, fetchBuildings, fetchUnitesByBuilding, createUnite, invalidateCacheFor, fetchLeases } from '../utils/api'
 import { formatPhone, formatCurrency, getClientTypeLabel, getClientTypeBadgeStyle, formatDate } from '../utils/formatters'
 import { safeMap, safeFilter, safeFind, safeGet, extractApiData, getErrorMessage } from '../utils/safetyHelpers'
@@ -934,6 +935,7 @@ const ClientModal = ({ client, referrers, onClose, onSuccess }) => {
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold" style={{ color: '#0D3B1F' }}>
               {client ? 'Modifier le client' : 'Nouveau client'}
+                {client && <div className="scale-75 origin-left ml-4"><AvatarUpload entityId={client.id} entityType="client" currentPhotoUrl={client.photoUrl} onUploadSuccess={(url) => client.photoUrl = url} /></div>}
             </h2>
             <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
               <X size={24} style={{ color: '#6B7280' }} />
@@ -2198,3 +2200,4 @@ const QuickUniteModal = ({ buildingId, buildingName, onClose, onSuccess }) => {
 }
 
 export default ClientsPage
+

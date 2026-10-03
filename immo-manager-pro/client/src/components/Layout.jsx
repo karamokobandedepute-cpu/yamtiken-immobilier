@@ -1,5 +1,6 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
+
 import {
   LayoutDashboard,
   Building2,
@@ -378,6 +379,7 @@ const Layout = () => {
         >
           <Outlet />
         </main>
+          
       </div>
 
       {/* Vérification du statut serveur - affiche un overlay si injoignable */}

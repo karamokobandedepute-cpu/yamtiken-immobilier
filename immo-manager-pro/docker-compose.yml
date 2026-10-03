@@ -1,168 +1,48 @@
-# ============================================================
-# DOCKER COMPOSE - INFRASTRUCTURE INCREVABLE
-# Backend + Frontend avec restart always et health checks
-# ============================================================
 version: '3.8'
 
 services:
-  # ============================================================
-  # BACKEND NODE.JS - L'API
-  # ============================================================
   backend:
     build:
       context: ./server
       dockerfile: Dockerfile
-    container_name: immo-backend
-    
-    # 🔄 INCASSABLE - Toujours redémarrer
+    container_name: yamtiken-backend
     restart: always
-    
-    # 🌐 PORTS
+    env_file:
+      - .env
     ports:
-      - "5002:5002"
-    
-    # 📁 VOLUMES - Code monté en temps réel (pas besoin de rebuild)
+      - "5000:5000"
     volumes:
-      - ./server:/app
-      - /app/node_modules
-      - ./logs:/app/logs
-    
-    # 🌍 ENVIRONNEMENT
-    environment:
-      - NODE_ENV=development
-      - PORT=5002
-      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres.envdbpthrufwjvejbnal:77916407@@Mu@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=15&pool_timeout=30&sslmode=require&connect_timeout=30}
-      - DIRECT_URL=${DIRECT_URL:-postgresql://postgres:77916407@@Mu@db.envdbpthrufwjvejbnal.supabase.co:5432/postgres?sslmode=require}
-      - SUPABASE_URL=${SUPABASE_URL:-https://envdbpthrufwjvejbnal.supabase.co}
-      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudmRicHRocnVmd2p2ZWpibmFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzA0NDEsImV4cCI6MjEwNjUwNjQ0MX0.gUpb1Ixvuwa0ao1HVHNgtxFLKv74uhLmfvtZj5i4sdA}
-      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudmRicHRocnVmd2p2ZWpibmFsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MDkzMDQ0MSwiZXhwIjoyMTA2NTA2NDQxfQ.1TvtjdDHLnWpIX5RGdeEPR-e8tG6YhMFDeTY-qzRN20}
-      - JWT_SECRET=${JWT_SECRET:-yamtiken_behemoth_jwt_2026_secure_random_key_987654321abcdef}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-24h}
-      - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL:-munokolive@gmail.com}
-      - ALERT_EMAIL=${ALERT_EMAIL:-munokolive@gmail.com}
-      - ALERT_REFRESH_INTERVAL=${ALERT_REFRESH_INTERVAL:-5}
-    
-    # 💾 LIMITES MÉMOIRE
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '0.5'
-        reservations:
-          memory: 128M
-    
-    # 🏥 HEALTH CHECK - Vérifie si le service répond
+      - yamtiken-uploads:/app/uploads
+      - yamtiken-logs:/app/logs
+    networks:
+      - yamtiken-network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5002/api/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
-    
-    # 🌐 RÉSEAU
-    networks:
-      - immo-network
-    
-    # 📝 LOGS
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      start_period: 20s
 
-  # ============================================================
-  # FRONTEND VITE - L'INTERFACE
-  # ============================================================
   frontend:
     build:
       context: ./client
       dockerfile: Dockerfile
-    container_name: immo-frontend
-    
-    # 🔄 INCASSABLE
+      args:
+        VITE_API_URL: "/api"
+    container_name: yamtiken-frontend
     restart: always
-    
-    # 🌐 PORTS
     ports:
-      - "5177:5177"
-    
-    # 📁 VOLUMES - Hot reload du code
-    volumes:
-      - ./client:/app
-      - /app/node_modules
-      - ./logs:/app/logs
-    
-    # 🌍 ENVIRONNEMENT
-    environment:
-      - NODE_ENV=development
-      - VITE_API_URL=${VITE_API_URL:-http://localhost:5002/api}
-      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL:-https://envdbpthrufwjvejbnal.supabase.co}
-      - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudmRicHRocnVmd2p2ZWpibmFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzA0NDEsImV4cCI6MjEwNjUwNjQ0MX0.gUpb1Ixvuwa0ao1HVHNgtxFLKv74uhLmfvtZj5i4sdA}
-    
-    # 💾 LIMITES MÉMOIRE
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '0.5'
-        reservations:
-          memory: 128M
-    
-    # 🏥 HEALTH CHECK
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5177"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    
-    # ⏳ DÉPENDANCES
+      - "80:80"
     depends_on:
       backend:
         condition: service_healthy
-    
-    # 🌐 RÉSEAU
     networks:
-      - immo-network
-    
-    # 📝 LOGS
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      - yamtiken-network
 
-  # ============================================================
-  # WATCHTOWER - Auto-update des containers (optionnel)
-  # ============================================================
-  watchtower:
-    image: containrrr/watchtower
-    container_name: immo-watchtower
-    restart: always
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - WATCHTOWER_POLL_INTERVAL=3600  # Check toutes les heures
-      - WATCHTOWER_CLEANUP=true
-    command: --interval 3600 backend frontend
-    deploy:
-      resources:
-        limits:
-          memory: 128M
-
-# ============================================================
-# RÉSEAU INTERNE
-# ============================================================
-networks:
-  immo-network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
-
-# ============================================================
-# VOLUMES PERSISTANTS
-# ============================================================
 volumes:
-  backend_logs:
-  frontend_logs:
+  yamtiken-uploads:
+  yamtiken-logs:
+
+networks:
+  yamtiken-network:
+    driver: bridge

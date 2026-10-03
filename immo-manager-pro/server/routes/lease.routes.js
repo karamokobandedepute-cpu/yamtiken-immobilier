@@ -1,5 +1,6 @@
 import express from 'express';
 import prisma from '../lib/prisma.js';
+import PDFDocument from 'pdfkit';
 import { verifyToken, canManageContrats } from '../middlewares/auth.middleware.js';
 import { validateBody } from '../middlewares/validate.js';
 import { createLeaseSchema, updateLeaseSchema } from '../validations/schemas.js';
@@ -404,6 +405,30 @@ router.patch('/:id', verifyToken, canManageContrats, async (req, res) => {
 });
 
 // DELETE /api/leases/:id
+
+// REMISE DES CLES
+router.put('/:id/remise-cles', verifyToken, canManageContrats, audit('lease', 'UPDATE'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { dateLivraisonPrevue } = req.body;
+    
+    const lease = await prisma.lease.update({
+      where: { id: parseInt(id) },
+      data: {
+        cleRemise: true,
+        dateRemiseCle: new Date(),
+        dateEntree: new Date(),
+        ...(dateLivraisonPrevue && { dateLivraisonPrevue: new Date(dateLivraisonPrevue) })
+      },
+      include: { client: true, bien: true }
+    });
+
+    res.json(lease);
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur lors de la remise des cles', error: error.message });
+  }
+});
+
 router.delete('/:id', verifyToken, canManageContrats, audit('lease', 'DELETE'), async (req, res) => {
   try {
     const { id } = req.params;
@@ -422,6 +447,69 @@ router.delete('/:id', verifyToken, canManageContrats, audit('lease', 'DELETE'), 
   } catch (error) {
     console.error('[DELETE /leases/:id]', error);
     res.status(500).json({ message: 'Erreur lors de la suppression' });
+  }
+});
+
+
+// GET /api/leases/:id/pdf-contract
+router.get('/:id/pdf-contract', verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const lease = await prisma.lease.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        client: true,
+        bien: { include: { building: true } }
+      }
+    });
+
+    if (!lease) {
+      return res.status(404).json({ message: 'Contrat non trouvé' });
+    }
+
+    const doc = new PDFDocument({ margin: 50 });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="Contrat_Bail_' + lease.numeroBail + '.pdf"');
+    doc.pipe(res);
+
+    doc.fontSize(22).fillColor('#1A6B35').text('CONTRAT DE BAIL À USAGE D\'HABITATION', { align: 'center' });
+    doc.moveDown(2);
+
+    doc.fontSize(12).fillColor('#000000');
+    doc.text('ENTRE LES SOUSSIGNÉS :', { underline: true }).moveDown(1);
+    doc.text('L\'Agence Immobilière YAMTIKEN BEHEMOTH, agissant au nom et pour le compte du propriétaire, désignée ci-après "Le Bailleur".');
+    doc.moveDown(1);
+    
+    doc.text('ET', { underline: true }).moveDown(1);
+    doc.text('Monsieur/Madame ' + lease.client.nom + ' ' + lease.client.prenom + ', désigné(e) ci-après "Le Preneur".');
+    doc.moveDown(2);
+
+    doc.fontSize(14).fillColor('#1A6B35').text('1. DÉSIGNATION DU BIEN', { underline: true }).fillColor('#000000').moveDown(0.5);
+    doc.text('Le Bailleur donne en location au Preneur le bien suivant : ' + lease.bien.designation);
+    if (lease.bien.building) {
+      doc.text('Situé dans l\'immeuble : ' + lease.bien.building.nom);
+    }
+    doc.moveDown(1.5);
+
+    doc.fontSize(14).fillColor('#1A6B35').text('2. DURÉE DU CONTRAT', { underline: true }).fillColor('#000000').moveDown(0.5);
+    doc.text('Le présent bail est conclu pour une durée d\'un an, renouvelable, commençant à courir à compter de la remise des clés : ' + new Date(lease.dateLivraisonPrevue || lease.dateEntree || Date.now()).toLocaleDateString('fr-FR'));
+    doc.moveDown(1.5);
+
+    doc.fontSize(14).fillColor('#1A6B35').text('3. LOYER ET GARANTIE', { underline: true }).fillColor('#000000').moveDown(0.5);
+    doc.text('Le loyer mensuel est fixé à : ' + lease.montantInitial.toLocaleString() + ' FCFA.');
+    doc.text('Le Preneur s\'est acquitté de la garantie de : ' + lease.montantGarantie.toLocaleString() + ' FCFA.');
+    doc.moveDown(3);
+
+    doc.text('Fait à Abidjan, le ' + new Date().toLocaleDateString('fr-FR'), { align: 'right' });
+    doc.moveDown(3);
+    
+    doc.text('Signature du Bailleur', 50, doc.y);
+    doc.text('Signature du Preneur', 400, doc.y);
+
+    doc.end();
+  } catch (error) {
+    console.error('[generateContractPDF]', error);
+    if (!res.headersSent) res.status(500).json({ message: 'Erreur serveur' });
   }
 });
 

@@ -1,5 +1,19 @@
 import prisma from '../lib/prisma.js';
 
+import nodemailer from 'nodemailer';
+const getTransporter = () => {
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT || '587'),
+    secure: process.env.SMTP_SECURE === 'true',
+    auth: {
+      user: process.env.SMTP_USER || process.env.GMAIL_APP_EMAIL,
+      pass: process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD,
+    },
+  });
+};
+
+
 
 
 // GET /api/paiements
@@ -113,7 +127,7 @@ export const createPaiement = async (req, res) => {
   try {
     const data = req.body;
     data.creeParId = req.user.id;
-    // ANTI-DOUBLE CLIC: Vérifier s'il y a un paiement identique il y a moins de 5 secondes
+    // ANTI-DOUBLE CLIC: Vï¿½rifier s'il y a un paiement identique il y a moins de 5 secondes
     const recentPaiement = await prisma.paiement.findFirst({
       where: {
         contratId: data.contratId,
@@ -124,7 +138,7 @@ export const createPaiement = async (req, res) => {
       }
     });
     if (recentPaiement) {
-      return res.status(429).json({ message: 'Paiement déjà enregistré. Veuillez patienter.' });
+      return res.status(429).json({ message: 'Paiement dï¿½jï¿½ enregistrï¿½. Veuillez patienter.' });
     }
 
 

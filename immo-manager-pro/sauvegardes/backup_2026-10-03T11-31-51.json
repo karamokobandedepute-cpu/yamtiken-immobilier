@@ -1,0 +1,70 @@
+{
+  "version": "1.0",
+  "date": "2026-10-03T11:31:55.528Z",
+  "data": {
+    "users": [
+      {
+        "id": 10,
+        "email": "munokolive@gmail.com",
+        "password": "$2b$10$iMjXCgy.1AgDxoE6PQRM7OySisYq8OvDmK7UlIp9NlPMTCsgHR8Q6",
+        "nom": "BEHEMOTH",
+        "prenom": "SuperAdmin",
+        "telephone": "+225 0777916407",
+        "role": "SUPER_ADMIN",
+        "actif": true,
+        "dernierConnexion": null,
+        "createdAt": "2026-10-03T11:11:52.709Z",
+        "updatedAt": "2026-10-03T11:11:52.709Z"
+      },
+      {
+        "id": 11,
+        "email": "secretaire@yamtiken.com",
+        "password": "$2b$10$JE/W.TmlOxZ9RC8.fvsAHezTBMzDgmWh/gJOXB5QG7helhjbMmiZe",
+        "nom": "YAMTIKEN",
+        "prenom": "Secrétaire",
+        "telephone": "+225 01 02 03 05",
+        "role": "SECRETAIRE",
+        "actif": true,
+        "dernierConnexion": null,
+        "createdAt": "2026-10-03T11:11:53.105Z",
+        "updatedAt": "2026-10-03T11:11:53.105Z"
+      },
+      {
+        "id": 12,
+        "email": "recouvrement@yamtiken.com",
+        "password": "$2b$10$LWEQgFJH.qPKD1duE7GUPO4HNyMrUPNsHgV5ErnluYzpMZ8hg82VS",
+        "nom": "YAMTIKEN",
+        "prenom": "Recouvrement",
+        "telephone": "+225 01 02 03 06",
+        "role": "AGENT_RECOUVREMENT",
+        "actif": true,
+        "dernierConnexion": null,
+        "createdAt": "2026-10-03T11:11:53.357Z",
+        "updatedAt": "2026-10-03T11:11:53.357Z"
+      },
+      {
+        "id": 13,
+        "email": "direction@yamtiken.com",
+        "password": "$2b$10$4P6DUjusWkk1F5q3cyvGXu/oEHfrgqML6uZkhtfng1YJTRil7wo06",
+        "nom": "BEHEMOTH",
+        "prenom": "Direction",
+        "telephone": "+225 01 02 03 07",
+        "role": "DIRECTION",
+        "actif": true,
+        "dernierConnexion": null,
+        "createdAt": "2026-10-03T11:11:53.671Z",
+        "updatedAt": "2026-10-03T11:11:53.671Z"
+      }
+    ],
+    "clients": [],
+    "referrers": [],
+    "buildings": [],
+    "unites": [],
+    "biens": [],
+    "leases": [],
+    "payments": [],
+    "commissions": [],
+    "visites": [],
+    "documents": []
+  }
+}

@@ -12,6 +12,8 @@ import { exportToExcel } from '../utils/excelUtils'
 import { logDocGeneration } from '../utils/pdfLogger'
 import { useAuthStore } from '../stores/authStore'
 import PrisePossessionModal from '../components/PrisePossessionModal'
+import EtatLieuxModal from '../components/EtatLieuxModal'
+import { FileSignature } from 'lucide-react'
 
 const ContratsPage = () => {
   const navigate = useNavigate()
@@ -23,6 +25,7 @@ const ContratsPage = () => {
   const [showLeaseModal, setShowLeaseModal] = useState(false)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showPriseModal, setShowPriseModal] = useState(false)
+    const [showEtatLieuxModal, setShowEtatLieuxModal] = useState(false)
   const [selectedLease, setSelectedLease] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
   const PAGE_SIZE = 12
@@ -913,7 +916,31 @@ const ContratsPage = () => {
                           <Printer size={14} />
                         </button>
 
-                        {/* Modifier */}
+                        
+                          
+                          {/* Télécharger Contrat (PDF) */}
+                          <a
+                            href={`/api/leases/${lease.id}/pdf-contract`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded transition-colors hover:opacity-80"
+                            style={{ background: '#FEF3C7', color: '#D97706' }}
+                            title="Télécharger le contrat (PDF)"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                          </a>
+
+                          {/* État des Lieux */}
+                          <button
+                            onClick={() => { setSelectedLease(lease); setShowEtatLieuxModal(true); }}
+                            className="p-1.5 rounded transition-colors hover:opacity-80"
+                            style={{ background: '#E0E7FF', color: '#4338CA' }}
+                            title="État des Lieux Numérique"
+                          >
+                            <FileSignature size={14} />
+                          </button>
+
+                          {/* Modifier */}
                         <button
                           onClick={() => openLeaseModal(lease)}
                           className="p-1.5 rounded transition-colors hover:opacity-80"
@@ -1172,6 +1199,7 @@ const LeaseFormModal = ({ lease, buildings, onClose, onSuccess }) => {
     buildingId: '',
     uniteId: '',
     dateDebut: new Date().toISOString().split('T')[0],
+    dateLivraisonPrevue: '',
     dateFin: '',
     montantInitial: '',
     montantLoyer: '',

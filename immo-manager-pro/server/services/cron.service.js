@@ -1,6 +1,7 @@
 import prisma from '../lib/prisma.js';
 import cron from 'node-cron';
 import { runDailyBackup } from './backup.service.js';
+import { runIntelligenceEngine } from './intelligence.service.js';
 import nodemailer from 'nodemailer';
 import notificationService from './notification.service.js';
 
@@ -29,6 +30,7 @@ class CronService {
     const backupTask = cron.schedule('0 3 * * *', async () => {
       console.log('💾 Sauvegarde automatique de la base de données...');
       await runDailyBackup();
+      await runIntelligenceEngine();
     });
     backupTask.start();
 
@@ -354,7 +356,7 @@ class CronService {
           // Créer une notification pour les agents de recouvrement
           const agentsRecouvrement = await prisma.user.findMany({
             where: {
-              role: { in: ['SUPER_ADMIN', 'ADMIN', 'AGENT_RECOUVREMENT'] },
+              role: { in: ['SUPER_ADMIN', 'ADMIN', 'AGENT_RECOUVREMENT', 'SECRETAIRE'] },
               actif: true
             }
           });

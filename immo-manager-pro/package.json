@@ -1,27 +1,26 @@
 {
-  "name": "immo-manager-pro",
-  "version": "2.0.0",
-  "description": "YAMTIKEN BEHEMOTH - Gestion Immobilière",
-  "main": "ecosystem.config.js",
+  "name": "yamtiken-immobilier-monorepo",
+  "version": "1.0.0",
+  "private": true,
   "scripts": {
-    "start": "cd server && node server.js",
-    "dev": "cd client && npm run dev",
-    "backend": "cd server && node server.js",
-    "frontend": "cd client && npm run dev",
-    "build": "cd client && npm run build",
-    "seed": "cd server && node prisma/seed.js",
-    "test": "node pw-dashboard.mjs"
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "dev": "concurrently \"npm run dev:server\" \"wait-on http://127.0.0.1:5000/api/health && npm run dev:client\"",
+    "build:server": "cd server && npm install",
+    "build:client": "cd client && npm run build",
+    "build": "npm run build:server && npm run build:client",
+    "start:bg": "pm2 start ecosystem.config.js",
+    "stop": "pm2 stop ecosystem.config.js",
+    "restart": "pm2 restart ecosystem.config.js",
+    "logs": "pm2 logs",
+    "status": "pm2 status",
+    "db:push": "cd server && npx dotenv-cli -e ../.env -- npx prisma db push",
+    "db:migrate": "cd server && npx dotenv-cli -e ../.env -- npx prisma migrate dev",
+    "db:studio": "cd server && npx dotenv-cli -e ../.env -- npx prisma studio"
   },
-  "keywords": [
-    "immobilier",
-    "gestion",
-    "yamtiken"
-  ],
-  "author": "Christian Anisonok",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "electron-serve": "^3.0.1",
-    "playwright": "^1.59.1"
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "wait-on": "^7.2.0"
   }
 }

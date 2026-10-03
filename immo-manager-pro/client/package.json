@@ -9,8 +9,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "electron:dev": "electron electron/main.cjs",
-    "electron:build": "cross-env VITE_API_URL=http://localhost:5000/api vite build && electron-builder",
-    "electron:pack": "cross-env VITE_API_URL=http://localhost:5000/api vite build && electron-builder --dir",
+    "electron:build": "vite build && electron-builder",
+    "electron:pack": "vite build && electron-builder --dir",
     "cap:build": "vite build",
     "cap:sync": "npm run cap:build && npx cap sync android",
     "cap:android": "npm run cap:sync && npx cap open android"

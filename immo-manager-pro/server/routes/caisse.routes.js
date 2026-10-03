@@ -522,4 +522,46 @@ router.get('/categories', verifyToken, (req, res) => {
   res.json(CATEGORIES_DEPENSE.map(c => ({ value: c, label: labels[c] || c })));
 });
 
+
+// GET /api/caisse/rentabilite - Rentabilité par immeuble
+router.get('/rentabilite', verifyToken, async (req, res) => {
+  try {
+    const buildings = await prisma.building.findMany({
+      where: { deletedAt: null },
+      include: {
+        leases: {
+          where: { deletedAt: null },
+          include: {
+            paiements: { where: { statut: 'VALIDE' } }
+          }
+        },
+        depenses: { where: { deletedAt: null } }
+      }
+    });
+
+    const stats = buildings.map(b => {
+      let revenus = 0;
+      b.leases.forEach(l => {
+        l.paiements.forEach(p => { revenus += p.montant; });
+      });
+      let depenses = 0;
+      b.depenses.forEach(d => { depenses += d.montant; });
+      
+      return {
+        id: b.id,
+        nom: b.nom,
+        revenus,
+        depenses,
+        rentabiliteNet: revenus - depenses,
+        roi: revenus > 0 ? (((revenus - depenses) / revenus) * 100).toFixed(1) : 0
+      };
+    });
+
+    res.json(stats);
+  } catch (error) {
+    console.error('[GET /caisse/rentabilite]', error.message);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
 export default router;

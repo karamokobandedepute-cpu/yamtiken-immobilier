@@ -19,8 +19,8 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
-  UserCircle
-} from 'lucide-react'
+  UserCircle,
+  Download, Upload } from 'lucide-react'
 import { fetchUsers, createUser, updateUser, deleteUser } from '../utils/api'
 import api from '../utils/api'
 import { getRoleLabel, getRoleBadgeColor } from '../utils/formatters'
@@ -34,7 +34,7 @@ const AdminPage = () => {
   const tabs = [
     { id: 'accounts', label: 'Comptes', icon: Users },
     { id: 'audit', label: 'Audit Logs', icon: FileText },
-    { id: 'system', label: 'Système', icon: Server }
+    { id: 'system', label: 'Syst�me', icon: Server }, { id: 'backup', label: 'Sauvegarde', icon: Database }
   ]
 
   return (
@@ -69,6 +69,7 @@ const AdminPage = () => {
       {activeTab === 'accounts' && <AccountsTab currentUser={currentUser} />}
       {activeTab === 'audit' && <AuditTab />}
       {activeTab === 'system' && <SystemTab />}
+        {activeTab === 'backup' && <BackupTab />}
     </div>
   )
 }
@@ -629,6 +630,133 @@ const AuditTab = () => {
 // ============================================
 // ONGLET 3 : MONITORING SYSTÈME
 // ============================================
+
+// ============================================
+// BACKUP TAB
+// ============================================
+const BackupTab = () => {
+  const [loading, setLoading] = useState(false);
+  const [backups, setBackups] = useState([]);
+
+  const loadBackups = async () => {
+    try {
+      const res = await api.get('/admin/backup/list');
+      setBackups(res.data);
+    } catch (e) {
+      toast.error('Erreur chargement des sauvegardes');
+    }
+  };
+
+  useEffect(() => {
+    loadBackups();
+  }, []);
+
+  const handleCreate = async () => {
+    try {
+      setLoading(true);
+      await api.post('/admin/backup/create');
+      toast.success('Sauvegarde réalisée avec succès !');
+      loadBackups();
+    } catch (e) {
+      toast.error('Erreur création sauvegarde');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRestoreLocal = async (filename) => {
+    if (!window.confirm(`ATTENTION: Voulez-vous vraiment restaurer la sauvegarde "${filename}" ?
+Toutes vos données actuelles seront remplacées.`)) return;
+    try {
+      setLoading(true);
+      await api.post('/admin/backup/restore-local', { filename });
+      toast.success('Restauration réussie ! Redémarrage...');
+      setTimeout(() => window.location.reload(), 2000);
+    } catch (err) {
+      toast.error('Erreur restauration : ' + err.message);
+      setLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/admin/backup/export', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'yamtiken_backup_' + new Date().toISOString().split('T')[0] + '.json');
+      document.body.appendChild(link);
+      link.click();
+      toast.success('Fichier JSON téléchargé !');
+    } catch (e) {
+      toast.error('Erreur export');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl shadow-sm border p-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              <Database size={24} style={{ color: '#0D3B1F' }} />
+              Sauvegardes Automatiques (3 derniers jours)
+            </h2>
+            <p className="text-gray-500 text-sm mt-1">
+              Les sauvegardes sont faites automatiquement chaque nuit. Le système conserve uniquement les 3 plus récentes.
+            </p>
+          </div>
+          <button onClick={handleCreate} disabled={loading} className="px-4 py-2 text-white rounded-lg flex items-center gap-2" style={{ background: '#0D3B1F' }}>
+            <Plus size={18} /> Créer maintenant
+          </button>
+        </div>
+
+        <div className="border rounded-lg overflow-hidden">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-gray-50 text-gray-500 border-b">
+              <tr>
+                <th className="p-3">Date</th>
+                <th className="p-3">Fichier</th>
+                <th className="p-3">Taille</th>
+                <th className="p-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {backups.length === 0 ? (
+                <tr><td colSpan="4" className="p-4 text-center text-gray-500">Aucune sauvegarde trouvée</td></tr>
+              ) : backups.map((b, i) => (
+                <tr key={i} className="border-b last:border-0 hover:bg-gray-50">
+                  <td className="p-3 font-medium">{new Date(b.date).toLocaleString('fr-FR')}</td>
+                  <td className="p-3 text-gray-500">{b.filename}</td>
+                  <td className="p-3 text-gray-500">{b.size}</td>
+                  <td className="p-3 text-right">
+                    <button onClick={() => handleRestoreLocal(b.filename)} disabled={loading} className="px-3 py-1 bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200 flex items-center gap-1 ml-auto">
+                      <RefreshCw size={14} /> Restaurer
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border p-6">
+        <h3 className="font-bold mb-2">Export Manuel</h3>
+        <p className="text-gray-500 text-sm mb-4">
+          Vous pouvez aussi télécharger une copie intégrale sur votre PC si vous le souhaitez.
+        </p>
+        <button onClick={handleExport} disabled={loading} className="px-4 py-2 border rounded-lg flex items-center gap-2 hover:bg-gray-50">
+          <Download size={18} /> Télécharger la base (JSON)
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const SystemTab = () => {
   const [status, setStatus] = useState(null)
   const [loading, setLoading] = useState(true)

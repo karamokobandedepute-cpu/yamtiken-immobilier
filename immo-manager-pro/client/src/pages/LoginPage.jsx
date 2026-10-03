@@ -120,7 +120,9 @@ const LoginPage = () => {
       }
 
       navigate('/')
-    } else {
+    } else if (result.unverified) {
+        navigate('/verify-otp')
+      } else {
       captureLogin({ email }, false, { reason: result.message, ip: 'client-side' })
 
       const msg = result.message || ''
@@ -479,3 +481,4 @@ const LoginPage = () => {
 }
 
 export default LoginPage
+

@@ -373,6 +373,64 @@ router.get('/audit-logs', verifyToken, isAdmin, async (req, res) => {
 });
 
 // ============================================
+
+// ============================================
+// SYSTEM BACKUP & RESTORE (Interne)
+// ============================================
+import { exportFullDatabase, restoreFullDatabase, runDailyBackup, getLocalBackups, restoreFromLocalBackup } from '../services/backup.service.js';
+
+router.get('/backup/list', verifyToken, isAdmin, (req, res) => {
+  try {
+    const list = getLocalBackups();
+    res.json(list);
+  } catch (e) {
+    res.status(500).json({message: e.message});
+  }
+});
+
+router.post('/backup/create', verifyToken, isAdmin, async (req, res) => {
+  try {
+    await runDailyBackup();
+    res.json({message: 'Sauvegarde créée avec succès !'});
+  } catch (e) {
+    res.status(500).json({message: e.message});
+  }
+});
+
+router.post('/backup/restore-local', verifyToken, isAdmin, async (req, res) => {
+  try {
+    await restoreFromLocalBackup(req.body.filename);
+    res.json({message: 'Restauration réussie !'});
+  } catch (e) {
+    res.status(500).json({message: e.message});
+  }
+});
+
+router.get('/backup/export', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const backupData = await exportFullDatabase();
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename=yamtiken_backup_${new Date().toISOString().split('T')[0]}.json`);
+    res.json(backupData);
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur lors de l\'exportation de la base de données' });
+  }
+});
+
+router.post('/backup/import', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const backupData = req.body;
+    if (!backupData || !backupData.version) {
+      return res.status(400).json({ message: 'Fichier de sauvegarde invalide.' });
+    }
+    
+    await restoreFullDatabase(backupData);
+    res.json({ message: 'Base de données restaurée avec succès !' });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur lors de la restauration : ' + error.message });
+  }
+});
+
 // SYSTEM STATUS - Monitoring avancé
 // ============================================
 router.get('/system-status', verifyToken, isAdmin, async (req, res) => {
