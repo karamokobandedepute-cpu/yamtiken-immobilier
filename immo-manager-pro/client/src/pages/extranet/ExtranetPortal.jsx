@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Home, Key, FileText, LogOut, CheckCircle, Clock } from 'lucide-react';
+import logoImg from '../../assets/logo/logo behemoth.png';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
@@ -83,11 +84,13 @@ export default function ExtranetPortal() {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="flex justify-center">
-            <div className="bg-green-100 p-3 rounded-full">
-              <Home className="h-12 w-12 text-green-600" />
+          
+          <div className="flex justify-center mb-6">
+            <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100">
+              <img src={logoImg} alt="Yamtiken Behemoth" className="w-24 h-24 object-contain" />
             </div>
           </div>
+
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Portail Locataire
           </h2>
@@ -142,6 +145,14 @@ export default function ExtranetPortal() {
             )}
           </div>
         </div>
+      
+        {/* Lien Administration */}
+        <div className="text-center mt-6">
+          <a href="/login" className="inline-block px-4 py-2 text-green-700 font-medium hover:underline">
+            Accès Collaborateurs (Administration)
+          </a>
+        </div>
+
       </div>
     );
   }
@@ -151,9 +162,12 @@ export default function ExtranetPortal() {
       <nav className="bg-green-700 text-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2 font-bold text-xl">
-              <Home size={24} /> Mon Portail Immobilier
+            
+            <div className="flex items-center gap-3 font-bold text-xl">
+              <img src={logoImg} alt="Logo" className="w-8 h-8 object-contain bg-white rounded-md p-1" />
+              Mon Portail Immobilier
             </div>
+
             <button onClick={handleLogout} className="flex items-center gap-2 hover:bg-green-800 px-3 py-2 rounded-md transition-colors">
               <LogOut size={18} /> Déconnexion
             </button>
