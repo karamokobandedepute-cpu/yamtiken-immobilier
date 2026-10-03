@@ -2,19 +2,18 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Installation dÃ©pendances systÃ¨me (Prisma)
-RUN apk add --no-cache openssl
+# 1. On installe les outils de compilation de base (très important pour éviter l'exit code 1)
+RUN apk add --no-cache python3 make g++
 
+# 2. On copie les fichiers de configuration
 COPY package*.json ./
+
+# 3. On installe les dépendances
 RUN npm install
 
+# 4. On copie tout le reste du code
 COPY . .
-RUN npx prisma generate
 
-EXPOSE 5000
+EXPOSE 5002
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost:5000/api/health || exit 1
-
-CMD ["node", "server.js"]
+CMD ["npm", "start"]
