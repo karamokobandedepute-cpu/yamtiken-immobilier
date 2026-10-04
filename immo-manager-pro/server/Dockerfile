@@ -14,6 +14,9 @@ RUN npm install --legacy-peer-deps --no-audit --no-fund
 # 4. On copie tout le reste du code
 COPY . .
 
+# 5. Génération du client Prisma (CRITIQUE : sinon le conteneur crashe au démarrage)
+RUN npx prisma generate
+
 EXPOSE 5002
 
 CMD ["npm", "start"]
