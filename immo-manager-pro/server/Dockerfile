@@ -3,7 +3,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 # 1. Outils de compilation + librairie de compatibilité (Pour bcrypt, prisma, etc. Zéro crash !)
-RUN apk add --no-cache python3 make g++ libc6-compat
+RUN apk add --no-cache python3 make g++ libc6-compat openssl
 
 # 2. On copie UNIQUEMENT package.json (On esquive volontairement le package-lock.json s'il existe encore)
 COPY package.json ./
