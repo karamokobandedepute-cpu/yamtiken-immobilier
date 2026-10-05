@@ -294,6 +294,67 @@ process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception', { message: error?.message, stack: error?.stack });
 });
 
+// ============================================================
+// 🔐 AUTO-BOOTSTRAP — PREMIER DÉMARRAGE (Zéro intervention)
+// Si l'admin SUPER_ADMIN_EMAIL n'existe PAS ENCORE en DB → on le crée
+// automatiquement avec le mot de passe officiel de setup-admin.js.
+// Zéro curl, zéro SQL, zéro action manuelle.
+// ============================================================
+async function bootstrapSuperAdmin() {
+  try {
+    const bcryptLib = (await import('bcrypt')).default;
+    const EMAIL = (process.env.SUPER_ADMIN_EMAIL || 'munokolive@gmail.com').toLowerCase();
+    const PWD = process.env.SUPER_ADMIN_PASSWORD || '77916407@Mu';
+
+    const existing = await prisma.user.findUnique({
+      where: { email: EMAIL },
+      select: { id: true, email: true, role: true, actif: true, verified: true }
+    }).catch(() => null);
+
+    if (!existing) {
+      const hashed = await bcryptLib.hash(PWD, 10);
+      const created = await prisma.user.create({
+        data: {
+          email: EMAIL,
+          password: hashed,
+          nom: 'KOLIVE',
+          prenom: 'Muno',
+          role: 'SUPER_ADMIN',
+          actif: true,
+          verified: true
+        },
+        select: { id: true, email: true, role: true }
+      });
+      logger.info('[AUTO-BOOTSTRAP] SUPER_ADMIN CREE AUTOMATIQUEMENT', {
+        email: created.email, id: created.id, role: created.role
+      });
+      console.log('');
+      console.log('[AUTO-BOOTSTRAP] Admin cree automatiquement:');
+      console.log('   -> Email : ' + EMAIL);
+      console.log('   -> Mot de passe : ' + PWD);
+      console.log('   -> Vous pouvez vous connecter MAINTENANT.');
+      console.log('');
+    } else {
+      const hashed = await bcryptLib.hash(PWD, 10);
+      await prisma.user.update({
+        where: { id: existing.id },
+        data: {
+          password: hashed,
+          nom: 'KOLIVE',
+          prenom: 'Muno',
+          role: 'SUPER_ADMIN',
+          actif: true,
+          verified: true
+        }
+      });
+      logger.info('[AUTO-BOOTSTRAP] SUPER_ADMIN EXISTANT SYNCHRONISE', { email: EMAIL });
+    }
+  } catch (error) {
+    logger.warn('[AUTO-BOOTSTRAP] Impossible de creer admin', { error: error?.message });
+  }
+}
+bootstrapSuperAdmin();
+
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`
 ╔════════════════════════════════════════════════════════╗

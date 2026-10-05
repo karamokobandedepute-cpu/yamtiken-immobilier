@@ -1,18 +1,17 @@
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+// PRIORITÉ : 1) Publishable Key (nouveau format recommandé Supabase) — 2) Anon Key (compatibilité historique)
+const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY
 
-// Indique si Supabase est réellement configuré (sans crasher l'app)
 export const isSupabaseEnabled = !!(supabaseUrl && supabaseKey
   && supabaseUrl.startsWith('https://')
   && supabaseKey.length > 20)
 
 if (!isSupabaseEnabled) {
-  console.warn('[Supabase] Non configuré — mode local actif. Définissez VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY dans .env pour activer le temps réel.')
+  console.warn('[Supabase] Non configuré — mode local actif. Définissez VITE_SUPABASE_URL + VITE_SUPABASE_PUBLISHABLE_KEY pour activer le temps réel.')
 }
 
-// Valeurs de fallback pour éviter le crash createClient
 const _url = supabaseUrl || 'https://placeholder.supabase.co'
 const _key = supabaseKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDAwMDAwMDAsImV4cCI6MTkxNTM2MjQwMH0.placeholder'
 

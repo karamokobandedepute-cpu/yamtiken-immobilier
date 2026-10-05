@@ -269,4 +269,68 @@ router.post('/change-password', verifyToken, async (req, res) => {
   }
 });
 
+// ============================================================
+// BOOTSTRAP ADMIN — Route de secours 1ère installation
+// SÉCURISÉE : nécessite X-Bootstrap-Token = SUPABASE_ACCESS_TOKEN
+// Usage UNIQUE : curl -X POST https://yamtiken2026.online/api/auth/bootstrap-admin \
+//                -H "X-Bootstrap-Token: <SUPABASE_ACCESS_TOKEN>"
+// ============================================================
+router.post('/bootstrap-admin', async (req, res) => {
+  try {
+    const headerToken = req.header('X-Bootstrap-Token');
+    const validToken = process.env.SUPABASE_ACCESS_TOKEN || process.env.BOOTSTRAP_TOKEN;
+
+    if (!validToken || !headerToken || headerToken !== validToken) {
+      return res.status(403).json({ message: 'Token bootstrap invalide ou manquant' });
+    }
+
+    const EMAIL = 'munokolive@gmail.com';
+    // Hash du mot de passe OFFICIEL (from setup-admin.js du repo)
+    const hashedPassword = await bcrypt.hash('77916407@Mu', 10);
+
+    const user = await prisma.user.upsert({
+      where: { email: EMAIL.toLowerCase() },
+      create: {
+        email: EMAIL.toLowerCase(),
+        password: hashedPassword,
+        nom: 'KOLIVE',
+        prenom: 'Muno',
+        role: 'SUPER_ADMIN',
+        actif: true,
+        verified: true
+      },
+      update: {
+        password: hashedPassword,
+        nom: 'KOLIVE',
+        prenom: 'Muno',
+        role: 'SUPER_ADMIN',
+        actif: true,
+        verified: true
+      },
+      select: { id: true, email: true, role: true, actif: true, verified: true }
+    });
+
+    logger.info('[BOOTSTRAP-ADMIN] Admin créé/actualisé', { email: EMAIL, role: user.role });
+
+    // Test de validation interne
+    const check = await bcrypt.compare('77916407@Mu', hashedPassword);
+
+    return res.json({
+      ok: true,
+      message: 'Admin SUPER_ADMIN créé/actualisé avec succès',
+      user,
+      credentials: {
+        email: EMAIL,
+        mot_de_passe: '77916407@Mu',
+        alternative_password: 'Admin@2026',
+        hashVerifie: check
+      }
+    });
+
+  } catch (error) {
+    logger.error('[BOOTSTRAP-ADMIN] Erreur bootstrap', { error: error?.message, stack: error?.stack });
+    return res.status(500).json({ message: 'Erreur bootstrap admin', error: error?.message });
+  }
+});
+
 export default router;
