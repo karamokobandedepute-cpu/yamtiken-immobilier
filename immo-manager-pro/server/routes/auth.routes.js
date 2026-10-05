@@ -31,7 +31,7 @@ router.post('/login', validateBody(loginSchema), async (req, res) => {
     const email = rawEmail?.trim();
     const password = rawPassword?.trim();
 
-    logger.info('[LOGIN] Tentative de connexion', { email });
+    logger.info('[LOGIN] Tentative de connexion', { email, passwordLength: password?.length });
 
     if (!email || !password) {
       return res.status(400).json({ message: 'Email et mot de passe requis' });
@@ -46,21 +46,53 @@ router.post('/login', validateBody(loginSchema), async (req, res) => {
       });
 
       if (!user) {
-        logger.warn('[LOGIN] Utilisateur non trouvé', { email });
+        logger.warn('[LOGIN] ❌ UTILISATEUR INTROUVABLE EN DB', { email: email.toLowerCase() });
         return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
       }
 
       if (!user.password) {
+        logger.warn('[LOGIN] ❌ UTILISATEUR SANS MOT DE PASSE HASHÉ', { id: user.id, email });
         return res.status(401).json({ message: "Compte non configuré. Contactez l'administrateur." });
       }
 
+      logger.info('[LOGIN] Utilisateur trouvé, vérification mot de passe en cours', {
+        email: user.email,
+        id: user.id,
+        role: user.role,
+        actif: user.actif,
+        verified: user.verified,
+        hashDbStartsWith: user.password.substring(0, 10) + '...',
+        hashDbLength: user.password.length
+      });
+
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
-        logger.warn('[LOGIN] Mot de passe invalide', { email });
+        logger.warn('[LOGIN] ❌ MOT DE PASSE INVALIDE bcrypt.compare=false', {
+          email,
+          passwordInputLength: password.length,
+          expectedHashPrefix: user.password.substring(0, 7),
+          note: 'Si tu viens d exécuter le setup-admin, peut-être as-tu tapé un autre mdp ? Valeurs testées: 77916407@Mu et Admin@2026'
+        });
+        // Écrit aussi en console brute facile à retrouver dans Coolify
+        console.error(`[LOGIN FAIL] bcrypt.compare=false pour ${email}`);
+        console.error(`  Mot de passe soumis longueur=${password.length} contenu="${password.substring(0, 5)}****"`);
+        console.error(`  Hash en base: ${user.password.substring(0, 30)}... (${user.password.length} chars)`);
+
+        // Test de sécurité on teste les 2 mots de passe attendus DIRECTEMENT contre le hash, pour loguer
+        const try1 = await bcrypt.compare('77916407@Mu', user.password);
+        const try2 = await bcrypt.compare('Admin@2026', user.password);
+        console.error(`  Test bcrypt '77916407@Mu' → ${try1}`);
+        console.error(`  Test bcrypt 'Admin@2026' → ${try2}`);
+        if (try1) console.error(`  → MOT DE PASSE CORRECT EN DB = '77916407@Mu'. Le user a tapé autre chose.`);
+        if (try2) console.error(`  → MOT DE PASSE CORRECT EN DB = 'Admin@2026'. Le user a tapé autre chose.`);
+
         return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
       }
 
+      logger.info('[LOGIN] ✅ bcrypt.compare=true — mot de passe OK', { email });
+
       if (!user.actif) {
+        logger.warn('[LOGIN] ❌ Compte inactif (actif=false)', { email });
         return res.status(401).json({ message: "Compte désactivé. Contactez l'administrateur." });
       }
 
@@ -87,6 +119,7 @@ router.post('/login', validateBody(loginSchema), async (req, res) => {
 
     } catch (localError) {
       console.error('[LOGIN] Erreur authentification:', localError);
+      logger.error('[LOGIN] Exception', { error: localError?.message, stack: localError?.stack });
       return res.status(500).json({ message: "Erreur serveur lors de l'authentification" });
     }
 

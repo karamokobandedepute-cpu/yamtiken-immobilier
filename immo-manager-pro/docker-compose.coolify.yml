@@ -42,10 +42,10 @@ services:
       - DIRECT_URL=${DIRECT_URL}
       - JWT_SECRET=${JWT_SECRET}
       - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_PUBLISHABLE_KEY=${SUPABASE_PUBLISHABLE_KEY}
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
       - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
       - SUPABASE_ACCESS_TOKEN=${SUPABASE_ACCESS_TOKEN}
+      - SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD:-77916407@@Mu}
       # Valeurs par défaut acceptables (non-secrets)
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-100y}
       - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL:-munokolive@gmail.com}
@@ -118,11 +118,9 @@ services:
 
     environment:
       - NODE_ENV=production
-      # Note: les VITE_* d'environnement runtime SONT IGNORÉS car Vite les injecte au BUILD
-      # On les garde juste pour référence.
+      # Note: les VITE_* runtime SONT IGNORÉS (injectés au BUILD), gardés pour référence
       - VITE_API_URL=${VITE_API_URL:-/api}
       - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
-      - VITE_SUPABASE_PUBLISHABLE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY}
       - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
     
     # Ã°Å¸â€™Â¾ LIMITES MÃƒâ€°MOIRE

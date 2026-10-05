@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import bcrypt from 'bcrypt';
 import logger, { httpLogger } from './lib/logger.js';
 
 // Patch global BigInt pour la sérialisation JSON (PostgreSQL COUNT/SUM renvoient BigInt)
@@ -299,21 +300,32 @@ process.on('uncaughtException', (error) => {
 // Si l'admin SUPER_ADMIN_EMAIL n'existe PAS ENCORE en DB → on le crée
 // automatiquement avec le mot de passe officiel de setup-admin.js.
 // Zéro curl, zéro SQL, zéro action manuelle.
+// Utilise bcrypt (même package que auth.routes.js ligne 2) pour 100% compatibilité.
 // ============================================================
 async function bootstrapSuperAdmin() {
   try {
-    const bcryptLib = (await import('bcrypt')).default;
     const EMAIL = (process.env.SUPER_ADMIN_EMAIL || 'munokolive@gmail.com').toLowerCase();
     const PWD = process.env.SUPER_ADMIN_PASSWORD || '77916407@Mu';
 
     const existing = await prisma.user.findUnique({
       where: { email: EMAIL },
-      select: { id: true, email: true, role: true, actif: true, verified: true }
+      select: { id: true, email: true, role: true, actif: true, verified: true, password: true }
     }).catch(() => null);
 
+    const hashed = await bcrypt.hash(PWD, 10);
+    // VÉRIFICATION SYSTÉMATIQUE APRÈS HASH
+    const preVerify = await bcrypt.compare(PWD, hashed);
+    if (!preVerify) {
+      logger.error('[AUTO-BOOTSTRAP] FATAL bcrypt.compare contre son propre hash a échoué');
+      console.error('[AUTO-BOOTSTRAP] FATAL: self-hash verification failed. STOP.');
+      return;
+    }
+
+    let user;
+    let mode;
     if (!existing) {
-      const hashed = await bcryptLib.hash(PWD, 10);
-      const created = await prisma.user.create({
+      mode = 'CREATED';
+      user = await prisma.user.create({
         data: {
           email: EMAIL,
           password: hashed,
@@ -323,20 +335,11 @@ async function bootstrapSuperAdmin() {
           actif: true,
           verified: true
         },
-        select: { id: true, email: true, role: true }
+        select: { id: true, email: true, role: true, actif: true, verified: true, password: true }
       });
-      logger.info('[AUTO-BOOTSTRAP] SUPER_ADMIN CREE AUTOMATIQUEMENT', {
-        email: created.email, id: created.id, role: created.role
-      });
-      console.log('');
-      console.log('[AUTO-BOOTSTRAP] Admin cree automatiquement:');
-      console.log('   -> Email : ' + EMAIL);
-      console.log('   -> Mot de passe : ' + PWD);
-      console.log('   -> Vous pouvez vous connecter MAINTENANT.');
-      console.log('');
     } else {
-      const hashed = await bcryptLib.hash(PWD, 10);
-      await prisma.user.update({
+      mode = 'UPDATED';
+      user = await prisma.user.update({
         where: { id: existing.id },
         data: {
           password: hashed,
@@ -345,12 +348,40 @@ async function bootstrapSuperAdmin() {
           role: 'SUPER_ADMIN',
           actif: true,
           verified: true
-        }
+        },
+        select: { id: true, email: true, role: true, actif: true, verified: true, password: true }
       });
-      logger.info('[AUTO-BOOTSTRAP] SUPER_ADMIN EXISTANT SYNCHRONISE', { email: EMAIL });
     }
+
+    // VÉRIFICATION FINALE APRÈS INSERT/UPDATE
+    const verifyAfterInsert = await bcrypt.compare(PWD, user.password);
+
+    logger.info(`[AUTO-BOOTSTRAP] SUPER_ADMIN ${mode}`, {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      hashVerifOK: verifyAfterInsert,
+      hashLength: user.password.length,
+      hashPrefix: user.password.substring(0, 7)
+    });
+
+    console.log('');
+    console.log('============================================================');
+    console.log('[AUTO-BOOTSTRAP] ✅ SUPER ADMIN SYNCHRONISÉ');
+    console.log(`   Mode        : ${mode}`);
+    console.log(`   ID DB       : ${user.id}`);
+    console.log(`   Email       : ${EMAIL}`);
+    console.log(`   Mot de passe: ${PWD}`);
+    console.log(`   Role        : ${user.role}`);
+    console.log(`   Hash bcrypt : ${user.password.substring(0, 15)}... (len=${user.password.length})`);
+    console.log(`   bcrypt.verify(PWD, hash) → ${verifyAfterInsert ? '✅ OUI' : '❌ NON'}`);
+    console.log('   Connecte-toi MAINTENANT sur le site !');
+    console.log('============================================================');
+    console.log('');
   } catch (error) {
-    logger.warn('[AUTO-BOOTSTRAP] Impossible de creer admin', { error: error?.message });
+    const m = error?.message || String(error);
+    logger.warn('[AUTO-BOOTSTRAP] Erreur création admin', { message: m, code: error?.code, stack: error?.stack?.substring(0, 200) });
+    console.error('[AUTO-BOOTSTRAP] ❌ Erreur:', m);
   }
 }
 bootstrapSuperAdmin();
