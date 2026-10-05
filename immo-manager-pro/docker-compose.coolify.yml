@@ -13,36 +13,31 @@ services:
       context: ./immo-manager-pro/server
       dockerfile: Dockerfile
     container_name: immo-backend
-    
-    # EXPOSE PORT
+
     expose:
       - "5002"
-      
-    # Ã°Å¸ÂÂ·Ã¯Â¸Â LABELS TRAEFIK
+
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=coolify"
       - "traefik.http.routers.backend-http.entrypoints=http"
-      - "traefik.http.routers.backend-http.rule=Host(`yamtiken2026.online`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend-http.rule=(Host(`yamtiken2026.online`) || Host(`www.yamtiken2026.online`)) && PathPrefix(`/api`)"
       - "traefik.http.routers.backend-https.entrypoints=https"
-      - "traefik.http.routers.backend-https.rule=Host(`yamtiken2026.online`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend-https.rule=(Host(`yamtiken2026.online`) || Host(`www.yamtiken2026.online`)) && PathPrefix(`/api`)"
       - "traefik.http.routers.backend-https.tls=true"
       - "traefik.http.routers.backend-https.tls.certresolver=letsencrypt"
       - "traefik.http.services.backend.loadbalancer.server.port=5002"
-      
-    # Ã°Å¸â€â€ž INCASSABLE - Toujours redÃƒÂ©marrer
+
     restart: always
-    
-    # Ã°Å¸â€œÂ VOLUMES - Logs uniquement en production
+
     volumes:
       - backend_logs:/app/logs
-    
-    # Ã°Å¸Å’Â ENVIRONNEMENT
+
     environment:
       - NODE_ENV=production
       - PORT=5002
-      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres.envdbpthrufwjvejbnal:77916407@@Mu@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=15&pool_timeout=30&sslmode=require&connect_timeout=30}
-      - DIRECT_URL=${DIRECT_URL:-postgresql://postgres:77916407@@Mu@db.envdbpthrufwjvejbnal.supabase.co:5432/postgres?sslmode=require}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres.envdbpthrufwjvejbnal:77916407%40%40Mu@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=15&pool_timeout=30&sslmode=require&connect_timeout=30}
+      - DIRECT_URL=${DIRECT_URL:-postgresql://postgres:77916407%40%40Mu@db.envdbpthrufwjvejbnal.supabase.co:5432/postgres?sslmode=require}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-24h}
       - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudmRicHRocnVmd2p2ZWpibmFsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MDkzMDQ0MSwiZXhwIjoyMTA2NTA2NDQxfQ.1TvtjdDHLnWpIX5RGdeEPR-e8tG6YhMFDeTY-qzRN20}
       - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL:-munokolive@gmail.com}
@@ -51,7 +46,7 @@ services:
       - JWT_SECRET=${JWT_SECRET:-yamtiken_behemoth_jwt_2026_secure_random_key_987654321abcdef}
       - SUPABASE_URL=${SUPABASE_URL:-https://envdbpthrufwjvejbnal.supabase.co}
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudmRicHRocnVmd2p2ZWpibmFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzA0NDEsImV4cCI6MjEwNjUwNjQ0MX0.gUpb1Ixvuwa0ao1HVHNgtxFLKv74uhLmfvtZj5i4sdA}
-      - CLIENT_URL=${CLIENT_URL:-http://localhost:5177}
+      - CLIENT_URL=${CLIENT_URL:-https://yamtiken2026.online}
     
     # Ã°Å¸â€™Â¾ LIMITES MÃƒâ€°MOIRE
     deploy:
@@ -91,28 +86,29 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-/api}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-https://envdbpthrufwjvejbnal.supabase.co}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVudmRicHRocnVmd2p2ZWpibmFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MzA0NDEsImV4cCI6MjEwNjUwNjQ0MX0.gUpb1Ixvuwa0ao1HVHNgtxFLKv74uhLmfvtZj5i4sdA}
     container_name: immo-frontend
-    
-    # EXPOSE PORT
-    ports:
+
+    expose:
       - "80"
-      
-    # Ã°Å¸ÂÂ·Ã¯Â¸Â LABELS TRAEFIK
+
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=coolify"
-      - "traefik.http.routers.frontend.rule=Host(`yamtiken2026.online`)"
-      - "traefik.http.routers.frontend.entrypoints=http,https"
+      - "traefik.http.routers.frontend-http.entrypoints=http"
+      - "traefik.http.routers.frontend-http.rule=Host(`yamtiken2026.online`) || Host(`www.yamtiken2026.online`)"
+      - "traefik.http.routers.frontend-https.entrypoints=https"
+      - "traefik.http.routers.frontend-https.rule=Host(`yamtiken2026.online`) || Host(`www.yamtiken2026.online`)"
+      - "traefik.http.routers.frontend-https.tls=true"
+      - "traefik.http.routers.frontend-https.tls.certresolver=letsencrypt"
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
-      
-    # Ã°Å¸â€â€ž INCASSABLE
+
     restart: always
-    
-    # Ã°Å¸â€œÂ VOLUMES - Logs uniquement
+
     volumes:
       - frontend_logs:/app/logs
-    
-    # Ã°Å¸Å’Â ENVIRONNEMENT
+
     environment:
       - NODE_ENV=production
       - VITE_API_URL=${VITE_API_URL:-/api}

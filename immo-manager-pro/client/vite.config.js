@@ -8,7 +8,7 @@ const envPath = fs.existsSync('.env') ? './' : '../';
 export default defineConfig(({ command }) => ({
   plugins: [react()],
   envDir: envPath,
-  base: command === 'serve' ? '/' : './',
+  base: '/',
   server: {
     host: true, // Écoute sur IPv4 et IPv6 (0.0.0.0 et ::)
     port: 5173,
