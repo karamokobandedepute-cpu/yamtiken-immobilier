@@ -1,18 +1,9 @@
 # ============================================================================
-#  DOCKERFILE BACKEND - NODE 20 ALPINE / EXPRESS / PRISMA (PORT 5002)
-#  --------------------------------------------------------------------------
-#  ⚠️ CORRECTION DU BUG "skips devDependencies" :
-#  NODE_ENV=development FORCÉ pendant npm install, sinon Prisma CLI (devDep)
-#  est omis par npm → "npx prisma generate" introuvable.
-#
-#  ⚠️ ANTI-COOLIFY : 35 ARGs déclarés explicitement
+#  DOCKERFILE BACKEND - NODE 20 / EXPRESS / PRISMA / PORT 5002
 # ============================================================================
-
 FROM node:20-alpine
 
-# ----------------------------------------------------------------------------
-# 👉 ANTI-COOLIFY : liste complète des ARGs
-# ----------------------------------------------------------------------------
+# 👉 ANTI-COOLIFY : tous ARGs
 ARG COOLIFY_URL
 ARG COOLIFY_FQDN
 ARG COOLIFY_BRANCH
@@ -54,86 +45,62 @@ ARG ALLOWED_ORIGINS
 
 WORKDIR /app
 
-# Étape 1 : compilateurs (prisma + bcrypt native) → virés en fin pour alléger
+# Compilateurs temporaires pour Prisma/bcrypt, retirés à la fin
 RUN apk add --no-cache --virtual .build-deps python3 make g++ 2>&1 | tail -3 ; \
     apk add --no-cache libc6-compat openssl curl wget 2>&1 | tail -3 ; \
-    echo "[OK SYSTÈME] Outils installés"
+    echo "[OK SYSTÈME]"
 
-# ENV PAR DÉFAUT runtime (override Coolify au lancement du conteneur)
-ENV NODE_ENV=${NODE_ENV:-production} \
-    PORT=${PORT:-5002}
+ENV NODE_ENV=${NODE_ENV:-production} PORT=${PORT:-5002}
 
 COPY package*.json ./
 
-# --------------------------------------------------------------------------
-#  Étape 2 : npm install — FORCAGE NODE_ENV=development
-#  Prisma CLI ("prisma") est dans devDependencies → sans ceci il disparaît.
-# --------------------------------------------------------------------------
+# ⚠️ npm install : NODE_ENV=development --include=dev pour ne PAS sauter Prisma CLI (devDep)
 RUN echo "===== npm install (FORCE NODE_ENV=development, --include=dev) =====" ; \
     OK=0 ; \
-    NODE_ENV=development npm install --include=dev --legacy-peer-deps \
-        --no-audit --no-fund --ignore-scripts 2>&1 | tail -12 && OK=1 ; \
+    NODE_ENV=development npm install --include=dev --legacy-peer-deps --no-audit --no-fund --ignore-scripts 2>&1 | tail -12 && OK=1 ; \
     if [ $OK -eq 0 ]; then \
-      echo "[RETRY 2] cache clean + install" ; \
       npm cache clean --force 2>/dev/null ; \
-      NODE_ENV=development npm install --include=dev --legacy-peer-deps \
-          --no-audit --no-fund --ignore-scripts --no-optional 2>&1 | tail -12 && OK=1 ; \
+      NODE_ENV=development npm install --include=dev --legacy-peer-deps --no-audit --no-fund --ignore-scripts --no-optional 2>&1 | tail -12 && OK=1 ; \
     fi ; \
     if [ $OK -eq 0 ]; then \
-      echo "[RETRY 3] install minimum + prisma CLI" ; \
-      NODE_ENV=development npm install --include=dev \
-          express cors dotenv express-rate-limit express-validator helmet \
-          jsonwebtoken multer xss-clean bcryptjs bcrypt @prisma/client@5 prisma@5 \
-          socket.io winston exceljs pdfkit nodemailer node-cron node-cache zod \
-          axios compression \
-          --legacy-peer-deps --no-audit --no-fund 2>&1 | tail -12 && OK=1 ; \
+      NODE_ENV=development npm install --include=dev express cors dotenv express-rate-limit express-validator helmet jsonwebtoken multer xss-clean bcryptjs bcrypt @prisma/client@5 prisma@5 socket.io winston exceljs pdfkit nodemailer node-cron node-cache zod axios compression --legacy-peer-deps --no-audit --no-fund 2>&1 | tail -12 && OK=1 ; \
     fi ; \
-    echo "--- Check post-install ---" ; \
-    echo "node_modules : $(du -sh node_modules 2>/dev/null | cut -f1)" ; \
-    test -d node_modules || (echo "[FATAL] node_modules absent" && exit 1) ; \
-    if [ -x node_modules/.bin/prisma ]; then echo "[OK] prisma CLI (local): $(node_modules/.bin/prisma --version 2>&1 | head -1)" ; \
-      else echo "[WARN] prisma CLI local absent — utilise npx"; fi
+    test -d node_modules || (echo "[FATAL] node_modules absent"; exit 1) ; \
+    echo "[OK node_modules: $(du -sh node_modules 2>/dev/null | cut -f1)]"
 
 COPY . .
 
-# --------------------------------------------------------------------------
-#  Étape 3 : PRISMA GENERATE (placeholder DATABASE_URL obligatoire même pour generate)
-# --------------------------------------------------------------------------
+# Placeholder DATABASE_URL valide pour prisma generate (la VRAIE est Coolify runtime)
 ENV DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@127.0.0.1:5432/postgres?schema=public&connect_timeout=30}
 ENV DIRECT_URL=${DIRECT_URL:-${DATABASE_URL}}
 
-RUN echo "[PRISMA] Génération @prisma/client à partir de prisma/schema.prisma" ; \
+RUN echo "[PRISMA] generate..." ; \
     OK=0 ; \
     (npx prisma generate --schema=./prisma/schema.prisma 2>&1 | tail -12) && OK=1 ; \
-    if [ $OK -eq 0 ]; then \
-      echo "[RETRY PRISMA 2/2]" ; \
-      (npx prisma generate --schema=./prisma/schema.prisma 2>&1 | tail -15) && OK=1 ; \
-    fi ; \
-    test -d node_modules/@prisma/client || (echo "[FATAL] Prisma generate échoué — @prisma/client absent" && exit 1) ; \
-    echo "[OK PRISMA] @prisma/client généré"
+    if [ $OK -eq 0 ]; then (npx prisma generate --schema=./prisma/schema.prisma 2>&1 | tail -15) && OK=1 ; fi ; \
+    test -d node_modules/@prisma/client || (echo "[FATAL Prisma]" ; exit 1) ; \
+    echo "[OK Prisma] @prisma/client généré"
 
-# Étape 4 : dossiers obligatoires (sinon crash multer / winston au démarrage)
-RUN mkdir -p ./uploads ./logs ./sauvegardes ./prisma ; \
-    touch ./uploads/.keep ./logs/.keep 2>/dev/null ; \
-    echo "[OK DOSSIERS] uploads/ logs/ présents"
-
-# Étape 5 : nettoyage compilateurs
-RUN apk del .build-deps 2>/dev/null ; rm -f /tmp/*.log 2>/dev/null ; echo "[OK NETTOYAGE]"
+RUN mkdir -p ./uploads ./logs ./sauvegardes ./prisma ; touch ./uploads/.keep ./logs/.keep 2>/dev/null
+RUN apk del .build-deps 2>/dev/null ; rm -f /tmp/*.log 2>/dev/null ; echo "[NETTOYAGE OK]"
 
 EXPOSE 5002
 
-HEALTHCHECK --interval=25s --timeout=6s --retries=5 --start-period=35s \
-  CMD (wget -qO- --spider "http://127.0.0.1:${PORT:-5002}/api/health" 2>/dev/null) \
-   || (curl -fsS         "http://127.0.0.1:${PORT:-5002}/health"      2>/dev/null) \
+# ⚠️ Healthcheck : 90s start_period (temps boot Prisma + bootstrap admin)
+#    retries=10 + interval=30s = 390s de tolérance. Jamais "unhealthy" en boot normal
+HEALTHCHECK --interval=30s --timeout=8s --retries=10 --start-period=90s \
+  CMD (wget -qO- --spider "http://127.0.0.1:${PORT:-5002}/api/health" >/dev/null 2>&1) \
+   || (curl -fsS "http://127.0.0.1:${PORT:-5002}/health"         >/dev/null 2>&1) \
    || exit 1
 
-# Démarrage intelligent (2 emplacements possibles de server.js)
+# Démarrage : server.js dans WORKDIR /app
 CMD ["sh", "-c", "\
   echo '========================================' ; \
   echo '  BACKEND YAMTIKEN IMMOBILIER API'     ; \
   echo '  PORT      = '${PORT:-5002}          ; \
   echo '  NODE_ENV  = '${NODE_ENV}            ; \
+  DB_PRESENT=''; [ -n \"${DATABASE_URL##*placeholder*}\" ] && DB_PRESENT=1 ; \
+  [ -n \"${DATABASE_URL##*postgres:postgres*}\" ] && DB_PRESENT=1 ; \
+  [ -z \"$DB_PRESENT\" ] && echo '  ⚠️  DATABASE_URL: placeholder (Coolify non renseignée ?)' || echo '  DATABASE_URL: configurée' ; \
   echo '========================================' ; \
-  if [ -f server.js ]; then exec node server.js ; \
-  elif [ -f server/server.js ]; then exec node server/server.js ; \
-  else echo '[FATAL] server.js introuvable — abandon'; exit 1; fi"]
+  exec node server.js"]

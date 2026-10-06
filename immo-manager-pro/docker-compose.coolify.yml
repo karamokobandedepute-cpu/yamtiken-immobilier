@@ -29,7 +29,7 @@ services:
       - "traefik.http.routers.backend-https.tls.certresolver=letsencrypt"
       - "traefik.http.services.backend.loadbalancer.server.port=5002"
 
-    restart: always
+    restart: unless-stopped
 
     volumes:
       - backend_logs:/app/logs
@@ -75,11 +75,11 @@ services:
           memory: 192M
 
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:5002/api/health 2>/dev/null || curl -fsS http://127.0.0.1:5002/health 2>/dev/null || exit 1"]
-      interval: 25s
-      timeout: 6s
-      retries: 5
-      start_period: 35s
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:5002/api/health >/dev/null 2>&1 || curl -fsS http://127.0.0.1:5002/health >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 8s
+      retries: 10
+      start_period: 90s
 
     networks:
       - default
@@ -121,7 +121,7 @@ services:
       - "traefik.http.routers.frontend-https.tls.certresolver=letsencrypt"
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
 
-    restart: always
+    restart: unless-stopped
 
     volumes:
       - frontend_logs:/app/logs
@@ -139,14 +139,14 @@ services:
 
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- --spider http://127.0.0.1:80/ >/dev/null 2>&1 || exit 1"]
-      interval: 25s
+      interval: 45s
       timeout: 5s
-      retries: 5
-      start_period: 25s
+      retries: 10
+      start_period: 60s
 
     depends_on:
       backend:
-        condition: service_healthy
+        condition: service_started
 
     networks:
       - default
