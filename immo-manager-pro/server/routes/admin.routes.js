@@ -1,7 +1,7 @@
 import express from 'express';
 import prisma from '../lib/prisma.js';
 import { verifyToken, isAdmin } from '../middlewares/auth.middleware.js';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import logger from '../lib/logger.js';
 import { auditAction } from '../middlewares/audit.js';
 import { getCacheStats } from '../lib/cache.js';

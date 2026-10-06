@@ -5,7 +5,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import logger, { httpLogger } from './lib/logger.js';
 
 // Patch global BigInt pour la sérialisation JSON (PostgreSQL COUNT/SUM renvoient BigInt)

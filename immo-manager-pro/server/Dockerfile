@@ -54,19 +54,25 @@ ENV NODE_ENV=${NODE_ENV:-production} PORT=${PORT:-5002}
 
 COPY package*.json ./
 
-# ⚠️ npm install : NODE_ENV=development --include=dev pour ne PAS sauter Prisma CLI (devDep)
-RUN echo "===== npm install (FORCE NODE_ENV=development, --include=dev) =====" ; \
+# ⚠️ npm install : NODE_ENV=development --include=dev (ne PAS sauter Prisma CLI qui est devDep)
+# Note : bcrypt NATIF a été SUPPRIMÉ du code et du package.json → on utilise bcryptjs pure JS (aucun build natif requis = plus de crash sur Alpine)
+RUN echo "===== npm install (FORCE NODE_ENV=development, --include=dev, bcryptjs PURE JS SEUL) =====" ; \
     OK=0 ; \
     NODE_ENV=development npm install --include=dev --legacy-peer-deps --no-audit --no-fund --ignore-scripts 2>&1 | tail -12 && OK=1 ; \
     if [ $OK -eq 0 ]; then \
+      echo "[RETRY 2] cache clean + reinstall" ; \
       npm cache clean --force 2>/dev/null ; \
+      rm -rf node_modules package-lock.json 2>/dev/null ; \
       NODE_ENV=development npm install --include=dev --legacy-peer-deps --no-audit --no-fund --ignore-scripts --no-optional 2>&1 | tail -12 && OK=1 ; \
     fi ; \
     if [ $OK -eq 0 ]; then \
-      NODE_ENV=development npm install --include=dev express cors dotenv express-rate-limit express-validator helmet jsonwebtoken multer xss-clean bcryptjs bcrypt @prisma/client@5 prisma@5 socket.io winston exceljs pdfkit nodemailer node-cron node-cache zod axios compression --legacy-peer-deps --no-audit --no-fund 2>&1 | tail -12 && OK=1 ; \
+      echo "[RETRY 3] install stack minimum" ; \
+      NODE_ENV=development npm install --include=dev express cors dotenv express-rate-limit express-validator helmet jsonwebtoken multer xss-clean bcryptjs @prisma/client@5 prisma@5 socket.io winston exceljs pdfkit nodemailer node-cron node-cache zod axios compression --legacy-peer-deps --no-audit --no-fund 2>&1 | tail -12 && OK=1 ; \
     fi ; \
     test -d node_modules || (echo "[FATAL] node_modules absent"; exit 1) ; \
-    echo "[OK node_modules: $(du -sh node_modules 2>/dev/null | cut -f1)]"
+    echo "[SÉCURITÉ] Vérifie que bcrypt NATIF n'est PAS installé :" ; \
+    if [ -d node_modules/bcrypt ]; then echo "[WARN] bcrypt natif trouvé — suppression forcée" ; rm -rf node_modules/bcrypt ; fi ; \
+    echo "[OK node_modules: $(du -sh node_modules 2>/dev/null | cut -f1), bcryptjs: $(node -e 'try{console.log(require(\"bcryptjs/package.json\").version)}catch(e){console.log(\"N/A\")}' 2>/dev/null || echo N/A)]"
 
 COPY . .
 
