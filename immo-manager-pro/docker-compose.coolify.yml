@@ -34,10 +34,9 @@ services:
       - backend_logs:/app/logs
 
     environment:
-      - NODE_ENV=production
-      - PORT=5002
-      # ⚠️ Variables critiques SANS fallback — COOLIFY EST LA SOURCE UNIQUE DE VÉRITÉ
-      # (ça permet de supprimer/modifier les vars depuis l'UI Coolify sans blocage)
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-5002}
+      # Variables dynamiques — Valeurs injectées VIA COOLIFY UI (onglet Environment Variables)
       - DATABASE_URL=${DATABASE_URL}
       - DIRECT_URL=${DIRECT_URL}
       - JWT_SECRET=${JWT_SECRET}
@@ -45,13 +44,25 @@ services:
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
       - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
       - SUPABASE_ACCESS_TOKEN=${SUPABASE_ACCESS_TOKEN}
-      - SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD:-77916407@@Mu}
-      # Valeurs par défaut acceptables (non-secrets)
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-100y}
-      - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL:-munokolive@gmail.com}
-      - ALERT_EMAIL=${ALERT_EMAIL:-munokolive@gmail.com}
-      - ALERT_REFRESH_INTERVAL=${ALERT_REFRESH_INTERVAL:-5}
-      - CLIENT_URL=${CLIENT_URL:-https://yamtiken2026.online}
+      - SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL}
+      - ALERT_EMAIL=${ALERT_EMAIL}
+      - ALERT_REFRESH_INTERVAL=${ALERT_REFRESH_INTERVAL}
+      - CLIENT_URL=${CLIENT_URL}
+      - VPS_FRONTEND_ORIGIN=${VPS_FRONTEND_ORIGIN}
+      - VPS_API_ORIGIN=${VPS_API_ORIGIN}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - CORS_ALLOW_ALL=${CORS_ALLOW_ALL}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_SECURE=${SMTP_SECURE}
+      - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
+      - GMAIL_APP_EMAIL=${GMAIL_APP_EMAIL}
+      - SERVICE_URL_BACKEND=${SERVICE_URL_BACKEND}
+      - SERVICE_URL_FRONTEND=${SERVICE_URL_FRONTEND}
+      - SERVICE_FQDN_BACKEND=${SERVICE_FQDN_BACKEND}
+      - SERVICE_FQDN_FRONTEND=${SERVICE_FQDN_FRONTEND}
     
     # Ã°Å¸â€™Â¾ LIMITES MÃƒâ€°MOIRE
     deploy:
@@ -90,10 +101,10 @@ services:
       context: ./immo-manager-pro/client
       dockerfile: Dockerfile
       args:
-        # ⚠️ Supabase keys SANS fallback — COOLIFY BUILD ARGS SONT LA SOURCE UNIQUE
-        VITE_API_URL: ${VITE_API_URL:-/api}
+        # ⚠️ IMPORTANT : Ce sont des ARGS DE BUILD (Vite doit les connaître au build)
+        # Dans Coolify UI → Onglet "Build Args" (pas Environment Variables)
+        VITE_API_URL: ${VITE_API_URL}
         VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
-        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
         VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
     container_name: immo-frontend
 
@@ -117,11 +128,7 @@ services:
       - frontend_logs:/app/logs
 
     environment:
-      - NODE_ENV=production
-      # Note: les VITE_* runtime SONT IGNORÉS (injectés au BUILD), gardés pour référence
-      - VITE_API_URL=${VITE_API_URL:-/api}
-      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
-      - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+      - NODE_ENV=${NODE_ENV:-production}
     
     # Ã°Å¸â€™Â¾ LIMITES MÃƒâ€°MOIRE
     deploy:
