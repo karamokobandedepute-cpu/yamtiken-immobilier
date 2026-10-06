@@ -1,0 +1,49 @@
+# ============================================================
+# .dockerignore CLIENT - Réduit le build context Docker
+# ============================================================
+
+# Node_modules HOST (on installe DANS Docker avec Alpine musl, pas ceux de Windows)
+node_modules
+*/node_modules
+**/node_modules
+
+# Builds locaux
+dist
+dist-electron
+dist-ssr
+build
+*.local
+
+# Plateformes natives LOURDES (inutiles pour un build Vite web)
+android/
+ios/
+electron/
+
+# Env & secrets (Coolify les injecte)
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Logs & sauvegardes
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+sauvegardes/
+backup_*.json
+
+# Git & IDE
+.git
+.gitignore
+.vscode
+.idea
+.windsurf
+.DS_Store
+*.swp
+
+# Cache
+.cache
+.parcel-cache
+.eslintcache
+.turbo

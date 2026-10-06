@@ -1,0 +1,45 @@
+# ============================================================
+# .dockerignore BACKEND - Réduit le build context Docker
+# ============================================================
+
+# Node_modules HOST (on compile bcrypt/prisma DANS Alpine, pas ceux de Windows)
+node_modules
+*/node_modules
+**/node_modules
+
+# Env & secrets (Coolify injecte DATABASE_URL, etc. au runtime)
+.env
+.env.*
+!.env.example
+
+# Logs, uploads & sauvegardes (sont dans des VOLUMES Docker)
+logs
+uploads
+sauvegardes
+*.log
+npm-debug.log*
+backup_*.json
+
+# Prisma runtime généré (régénéré dans Docker via prisma generate)
+prisma/generated
+prisma/migrations/_tmp_*
+node_modules/.prisma
+node_modules/@prisma/client
+
+# Git & IDE
+.git
+.gitignore
+.vscode
+.idea
+.windsurf
+.DS_Store
+*.swp
+
+# Builds TypeScript (on utilise .js natif)
+dist
+build
+*.tsbuildinfo
+
+# Temp
+*.temp
+*.tmp

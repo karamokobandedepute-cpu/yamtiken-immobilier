@@ -1,7 +1,7 @@
 # ============================================================
-# DOCKER COMPOSE COOLIFY - IMMO-MANAGER-PRO/
-# IMPORTANT : Coolify utilise --project-directory = RACINE du dépôt
-# Donc les chemins relatifs (context, volumes...) sont RACINE-relatifs.
+# DOCKER COMPOSE COOLIFY - À LA RACINE DU DÉPÔT
+# Résolution des chemins : --project-directory = RACINE du dépôt
+# Donc tous les contextes sont relatifs à la racine (./immo-manager-pro/...)
 # ============================================================
 version: '3.8'
 
@@ -100,6 +100,7 @@ services:
       context: ./immo-manager-pro/client
       dockerfile: Dockerfile
       args:
+        # Build Args pour Vite — injectés pendant le build (import.meta.env.VITE_*)
         VITE_API_URL: ${VITE_API_URL}
         VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
         VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
@@ -158,6 +159,9 @@ services:
         max-size: "10m"
         max-file: "3"
 
+# ============================================================
+# RÉSEAUX : coolify (externe, traefik) + default (interne compose)
+# ============================================================
 networks:
   coolify:
     name: coolify
@@ -165,6 +169,9 @@ networks:
   default:
     driver: bridge
 
+# ============================================================
+# VOLUMES PERSISTANTS : logs + uploads backend (obligatoire multer)
+# ============================================================
 volumes:
   backend_logs:
   backend_uploads:

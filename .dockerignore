@@ -1,0 +1,26 @@
+# .dockerignore RACINE (Coolify clone tout le dépôt — exclure le max)
+# Note : chaque service a son propre .dockerignore,
+# ce fichier-ci accélère uniquement les builds mono-stage.
+
+.git
+node_modules
+immo-manager-pro/**/node_modules
+immo-manager-pro/client/dist
+immo-manager-pro/client/android
+immo-manager-pro/client/electron
+immo-manager-pro/server/logs
+immo-manager-pro/server/uploads
+immo-manager-pro/**/sauvegardes
+immo-manager-pro/sauvegardes
+*.log
+backup_*.json
+.vscode
+.idea
+.DS_Store
+.windsurf
+LANCER_YAMTIKEN*.bat
+YAMTIKEN_BACKGROUND.vbs
+cleanup-demo.js
+fix*.js
+count.js
+*.ps1
